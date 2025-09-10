@@ -8,20 +8,46 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, BookOpen, Clock, TrendingUp, Star, History } from 'lucide-react';
 
+// ---------- Types ----------
+type Stats = {
+  totalPlaylists: number;
+  totalVideos: number;
+  completedVideos: number;
+  totalWatchTime: number;
+};
+
+type SearchHistoryItem = {
+  query: string;
+  createdAt: string;
+  resultsCount: number;
+};
+
+type Playlist = {
+  id: string;
+  title: string;
+  videoCount: number;
+};
+
+type Bookmark = {
+  id: string;
+  title: string;
+  url: string;
+};
+
+// ---------- Component ----------
 export default function Dashboard() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<Stats>({
     totalPlaylists: 0,
     totalVideos: 0,
     completedVideos: 0,
     totalWatchTime: 0,
   });
 
-  const [recentPlaylists, setRecentPlaylists] = useState([]);
-  const [searchHistory, setSearchHistory] = useState([]);
-  const [bookmarks, setBookmarks] = useState([]);
+  const [recentPlaylists, setRecentPlaylists] = useState<Playlist[]>([]);
+  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
 
   useEffect(() => {
-    // Load user dashboard data
     loadDashboardData();
   }, []);
 
@@ -41,7 +67,8 @@ export default function Dashboard() {
     ]);
   };
 
-  const completionPercentage = stats.totalVideos > 0 ? (stats.completedVideos / stats.totalVideos) * 100 : 0;
+  const completionPercentage =
+    stats.totalVideos > 0 ? (stats.completedVideos / stats.totalVideos) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-background">
@@ -55,7 +82,7 @@ export default function Dashboard() {
               </div>
               <h1 className="text-xl font-bold">NeuroLearn-AI</h1>
             </div>
-            
+
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm">Profile</Button>
               <ThemeToggle />
