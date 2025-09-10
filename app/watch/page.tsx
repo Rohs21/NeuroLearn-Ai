@@ -51,16 +51,21 @@ function WatchPageContent() {
       const stored = localStorage.getItem('neuro_playlist');
       if (stored) {
         loadedPlaylist = JSON.parse(stored);
+        console.log('[DEBUG] Loaded playlist from localStorage:', loadedPlaylist);
         setPlaylist(loadedPlaylist);
+      } else {
+        console.warn('[DEBUG] No playlist found in localStorage');
       }
     } catch (error) {
-      console.error('Failed to load playlist from localStorage:', error);
+      console.error('[DEBUG] Failed to load playlist from localStorage:', error);
     }
 
     // Set videoData from playlist if available
     if (videoId && loadedPlaylist && loadedPlaylist.videos) {
       const video = loadedPlaylist.videos.find((v: Video) => v.id === videoId);
+      console.log('[DEBUG] Looking for videoId', videoId, 'in playlist.videos:', loadedPlaylist.videos);
       if (video) {
+        console.log('[DEBUG] Found video for videoId', videoId, ':', video);
         setVideoData({
           title: video.title,
           description: video.description,
@@ -68,6 +73,8 @@ function WatchPageContent() {
           difficulty: video.difficulty || 'beginner',
         });
         return;
+      } else {
+        console.warn('[DEBUG] No video found for videoId', videoId, 'in playlist');
       }
     }
     // fallback placeholder
@@ -125,27 +132,31 @@ function WatchPageContent() {
         {/* Video Player Section */}
         <div className="flex-1 p-4">
           <div className="max-w-5xl">
-            <VideoPlayer
-              videoId={videoId}
-              title={videoData.title}
-              description={videoData.description}
-              channelTitle={videoData.channelTitle}
-              difficulty={videoData.difficulty}
-              onComplete={() => {
-                // Handle video completion
-                console.log('Video completed');
-              }}
-              onNext={() => {
-                // Navigate to next video in playlist
-                if (playlist && playlist.videos) {
-                  const currentIndex = playlist.videos.findIndex((v: Video) => v.id === videoId);
-                  const nextVideo = playlist.videos[currentIndex + 1];
-                  if (nextVideo) {
-                    router.push(`/watch?v=${nextVideo.id}`);
+            {(videoData.title && videoData.description && videoData.title !== 'Educational Video' && videoData.description !== 'This is a placeholder description for the educational video.') ? (
+              <VideoPlayer
+                videoId={videoId}
+                title={videoData.title}
+                description={videoData.description}
+                channelTitle={videoData.channelTitle}
+                difficulty={videoData.difficulty}
+                onComplete={() => {
+                  // Handle video completion
+                  console.log('Video completed');
+                }}
+                onNext={() => {
+                  // Navigate to next video in playlist
+                  if (playlist && playlist.videos) {
+                    const currentIndex = playlist.videos.findIndex((v: Video) => v.id === videoId);
+                    const nextVideo = playlist.videos[currentIndex + 1];
+                    if (nextVideo) {
+                      router.push(`/watch?v=${nextVideo.id}`);
+                    }
                   }
-                }
-              }}
-            />
+                }}
+              />
+            ) : (
+              <div className="text-center py-16 text-muted-foreground">Loading video details...</div>
+            )}
           </div>
         </div>
 

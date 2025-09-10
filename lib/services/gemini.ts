@@ -9,8 +9,10 @@ export class GeminiService {
 
   async generateVideoSummary(title: string, description: string): Promise<string> {
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
-      
+      // Use a safe fallback model name (update as needed per Google API docs)
+      const modelName = 'models/gemini-2.0-flash';
+      const model = this.genAI.getGenerativeModel({ model: modelName });
+
       const prompt = `
         Create a concise, educational summary of this video based on its title and description:
         
@@ -28,8 +30,13 @@ export class GeminiService {
 
       const result = await model.generateContent(prompt);
       const response = await result.response;
-      return response.text();
-    } catch (error) {
+      const text = response.text();
+      console.log('[Gemini DEBUG] Raw summary response:', text);
+      return text;
+    } catch (error: any) {
+      if (error && error.status === 404) {
+        console.error('[Gemini ERROR] Model not found. Please check the model name and your API access.');
+      }
       console.error('Gemini API Error:', error);
       return 'Summary unavailable. Please watch the video for full content.';
     }
@@ -37,8 +44,10 @@ export class GeminiService {
 
   async generateQuiz(title: string, description: string): Promise<any[]> {
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
-      
+      // Use a safe fallback model name (update as needed per Google API docs)
+      const modelName = 'models/gemini-2.0-flash';
+      const model = this.genAI.getGenerativeModel({ model: modelName });
+
       const prompt = `
         Based on this educational video, create 3 multiple-choice questions:
         
@@ -67,6 +76,7 @@ export class GeminiService {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const text = response.text();
+      console.log('[Gemini DEBUG] Raw quiz response:', text);
       
       try {
         return JSON.parse(text);
@@ -81,7 +91,10 @@ export class GeminiService {
           }
         ];
       }
-    } catch (error) {
+    } catch (error: any) {
+      if (error && error.status === 404) {
+        console.error('[Gemini ERROR] Model not found. Please check the model name and your API access.');
+      }
       console.error('Gemini Quiz Generation Error:', error);
       return [];
     }
@@ -89,7 +102,7 @@ export class GeminiService {
 
   async categorizeDifficulty(title: string, description: string): Promise<string> {
     try {
-      const model = this.genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
       
       const prompt = `
         Categorize the difficulty level of this educational content:

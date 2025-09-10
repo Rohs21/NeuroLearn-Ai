@@ -24,17 +24,26 @@ interface YouTubeVideoDetailsResponse {
 }
 
 export class YouTubeService {
-  private apiKey: string;
+  private apiKeys: string[];
   private baseUrl = 'https://www.googleapis.com/youtube/v3';
 
   constructor() {
-    this.apiKey = process.env.YOUTUBE_API_KEY!;
+    this.apiKeys = process.env.YOUTUBE_API_KEYS!.split(",");
+  }
+
+  private getRandomApiKey(): string {
+    return this.apiKeys[Math.floor(Math.random() * this.apiKeys.length)];
   }
 
   async searchVideos(query: string, maxResults: number = 20): Promise<any[]> {
     try {
-      const searchUrl = `${this.baseUrl}/search?part=snippet&type=video&q=${encodeURIComponent(query)}&maxResults=${maxResults}&key=${this.apiKey}&order=relevance&videoDuration=medium`;
-      
+      // Pick one random API key for the whole request
+      const apiKey = this.getRandomApiKey();
+
+      const searchUrl = `${this.baseUrl}/search?part=snippet&type=video&q=${encodeURIComponent(
+        query
+      )}&maxResults=${maxResults}&key=${apiKey}&order=relevance&videoDuration=medium`;
+
       const searchResponse = await fetch(searchUrl);
       const searchData: YouTubeSearchResponse = await searchResponse.json();
 
@@ -44,9 +53,8 @@ export class YouTubeService {
 
       // Get video IDs for duration fetching
       const videoIds = searchData.items.map(item => item.id.videoId).join(',');
-      
-      // Get video details including duration
-      const detailsUrl = `${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${this.apiKey}`;
+
+      const detailsUrl = `${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${apiKey}`;
       const detailsResponse = await fetch(detailsUrl);
       const detailsData: YouTubeVideoDetailsResponse = await detailsResponse.json();
 
@@ -56,7 +64,10 @@ export class YouTubeService {
         title: item.snippet.title,
         description: item.snippet.description,
         channelTitle: item.snippet.channelTitle,
-        thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
+        thumbnailUrl:
+          item.snippet.thumbnails.high?.url ||
+          item.snippet.thumbnails.medium?.url ||
+          item.snippet.thumbnails.default?.url,
         publishedAt: item.snippet.publishedAt,
         duration: detailsData.items[index]?.contentDetails.duration || 'PT0S',
       }));
