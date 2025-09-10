@@ -12,7 +12,8 @@ function WatchPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const videoId = searchParams.get('v');
-  const playlistData = searchParams.get('playlist');
+  // Remove playlist from URL, use localStorage instead
+  const [playlistData, setPlaylistData] = useState(null);
 
   const [videoData, setVideoData] = useState({
     title: 'Loading video...',
@@ -21,28 +22,61 @@ function WatchPageContent() {
     difficulty: 'beginner',
   });
 
-  const [playlist, setPlaylist] = useState(null);
+  type Video = {
+    id: string;
+    title: string;
+    description: string;
+    channelTitle: string;
+    duration: string;
+    thumbnailUrl: string;
+    difficulty: string;
+    order: number;
+    isCompleted?: boolean;
+    [key: string]: any;
+  };
+  type Playlist = {
+    title: string;
+    description: string;
+    totalVideos: number;
+    completedVideos: number;
+    videos: Video[];
+    [key: string]: any;
+  };
+  const [playlist, setPlaylist] = useState<Playlist | null>(null);
 
   useEffect(() => {
-    if (videoId) {
-      // In a real app, you'd fetch video metadata from your database
-      // For now, we'll use YouTube API or show placeholder data
-      setVideoData({
-        title: 'Educational Video',
-        description: 'This is a placeholder description for the educational video.',
-        channelTitle: 'Educational Channel',
-        difficulty: 'beginner',
-      });
+    // Load playlist from localStorage
+    let loadedPlaylist = null;
+    try {
+      const stored = localStorage.getItem('neuro_playlist');
+      if (stored) {
+        loadedPlaylist = JSON.parse(stored);
+        setPlaylist(loadedPlaylist);
+      }
+    } catch (error) {
+      console.error('Failed to load playlist from localStorage:', error);
     }
 
-    // Load playlist data from localStorage or URL parameter
-    if (playlistData) {
-      try {
-        setPlaylist(JSON.parse(decodeURIComponent(playlistData)));
-      } catch (error) {
-        console.error('Failed to parse playlist data:', error);
+    // Set videoData from playlist if available
+    if (videoId && loadedPlaylist && loadedPlaylist.videos) {
+      const video = loadedPlaylist.videos.find((v: Video) => v.id === videoId);
+      if (video) {
+        setVideoData({
+          title: video.title,
+          description: video.description,
+          channelTitle: video.channelTitle || '',
+          difficulty: video.difficulty || 'beginner',
+        });
+        return;
       }
     }
+    // fallback placeholder
+    setVideoData({
+      title: 'Educational Video',
+      description: 'This is a placeholder description for the educational video.',
+      channelTitle: 'Educational Channel',
+      difficulty: 'beginner',
+    });
   }, [videoId]);
 
   if (!videoId) {
@@ -104,10 +138,10 @@ function WatchPageContent() {
               onNext={() => {
                 // Navigate to next video in playlist
                 if (playlist && playlist.videos) {
-                  const currentIndex = playlist.videos.findIndex(v => v.id === videoId);
+                  const currentIndex = playlist.videos.findIndex((v: Video) => v.id === videoId);
                   const nextVideo = playlist.videos[currentIndex + 1];
                   if (nextVideo) {
-                    router.push(`/watch?v=${nextVideo.id}&playlist=${encodeURIComponent(JSON.stringify(playlist))}`);
+                    router.push(`/watch?v=${nextVideo.id}`);
                   }
                 }
               }}
@@ -121,8 +155,8 @@ function WatchPageContent() {
             <PlaylistSidebar
               playlist={playlist}
               currentVideoId={videoId}
-              onVideoSelect={(selectedVideoId) => {
-                router.push(`/watch?v=${selectedVideoId}&playlist=${encodeURIComponent(JSON.stringify(playlist))}`);
+              onVideoSelect={(selectedVideoId: string) => {
+                router.push(`/watch?v=${selectedVideoId}`);
               }}
             />
           </div>

@@ -46,7 +46,10 @@ export default function HomePage() {
   };
 
   const handleVideoPlay = (videoId: string) => {
-    // Navigate to video player page
+    // Save playlist to localStorage before navigating
+    if (playlist) {
+      localStorage.setItem('neuro_playlist', JSON.stringify(playlist));
+    }
     router.push(`/watch?v=${videoId}`);
   };
 

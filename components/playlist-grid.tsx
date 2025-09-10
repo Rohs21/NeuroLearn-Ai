@@ -75,9 +75,9 @@ export function PlaylistGrid({ playlist, onVideoPlay, onBookmarkPlaylist }: Play
               isBookmarked: false, // This would come from user bookmarks
             }}
             onPlay={() => {
-              // Pass playlist data to the watch page
-              const playlistParam = encodeURIComponent(JSON.stringify(playlist));
-              window.location.href = `/watch?v=${video.id}&playlist=${playlistParam}`;
+              // Store playlist in localStorage and use parent handler
+              localStorage.setItem('neuro_playlist', JSON.stringify(playlist));
+              onVideoPlay(video.id);
             }}
             onBookmark={(videoId) => {
               // Handle bookmarking logic here
