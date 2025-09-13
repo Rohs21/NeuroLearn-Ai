@@ -126,7 +126,9 @@ export class GeminiService {
       let jsonString = result.response.text().trim();
 
       // 🧹 Clean response (remove markdown code fences if Gemini adds them)
-      jsonString = jsonString.replace(/json|/g, "").trim();
+      jsonString = jsonString.replace(/```json|```/g, "").trim();
+
+      console.log("[Gemini DEBUG] Cleaned JSON:", jsonString);
 
       const enhancedData = JSON.parse(jsonString);
       return enhancedData;
@@ -136,14 +138,14 @@ export class GeminiService {
         title: jobTitle,
         summary: "Failed to generate AI-enhanced data.",
         keywords: [],
-      };
-    }
-  }
+      };
+    }
+  }
 
   async categorizeDifficulty(title: string, description: string): Promise<string> {
     try {
       const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      
+
       const prompt = `
         Categorize the difficulty level of this educational content:
         
@@ -161,7 +163,7 @@ export class GeminiService {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const difficulty = response.text().toLowerCase().trim();
-      
+
       if (['beginner', 'intermediate', 'advanced'].includes(difficulty)) {
         return difficulty;
       }
