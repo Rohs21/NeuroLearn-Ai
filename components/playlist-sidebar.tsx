@@ -39,9 +39,9 @@ export function PlaylistSidebar({ playlist, currentVideoId, onVideoSelect }: Pla
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-y-auto scrollbar-hide">
       {/* Playlist Header */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b flex-shrink-0">
         <h2 className="font-bold text-lg mb-2 line-clamp-2">{playlist.title}</h2>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
@@ -55,8 +55,8 @@ export function PlaylistSidebar({ playlist, currentVideoId, onVideoSelect }: Pla
         </div>
       </div>
 
-      {/* Video List */}
-      <ScrollArea className="flex-1">
+  {/* Video List - Remove ScrollArea since parent handles scrolling */}
+  <div className="flex-1">
         <div className="p-2">
           {playlist.videos.map((video, index) => (
             <div
@@ -111,7 +111,56 @@ export function PlaylistSidebar({ playlist, currentVideoId, onVideoSelect }: Pla
             </div>
           ))}
         </div>
-      </ScrollArea>
+      </div>
     </div>
   );
 }
+
+// Example usage with sample data for demonstration
+function PlaylistDemo() {
+  const [currentVideoId, setCurrentVideoId] = useState('1');
+  
+  const samplePlaylist = {
+    title: "React Advanced Patterns",
+    description: "Learn advanced React patterns and techniques",
+    totalVideos: 15,
+    completedVideos: 3,
+    videos: Array.from({ length: 15 }, (_, i) => ({
+      id: String(i + 1),
+      title: `React Pattern ${i + 1}: Advanced Techniques for Modern Development`,
+      channelTitle: "React Mastery",
+      duration: `${Math.floor(Math.random() * 20) + 5}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+      thumbnailUrl: `https://picsum.photos/120/68?random=${i + 1}`,
+      difficulty: ['beginner', 'intermediate', 'advanced'][Math.floor(Math.random() * 3)],
+      order: i + 1,
+      isCompleted: Math.random() > 0.7
+    }))
+  };
+
+  return (
+    <div className="h-screen flex">
+      {/* Main content area */}
+      <div className="flex-1 p-8 bg-gray-50">
+        <h1 className="text-2xl font-bold mb-4">Video Player Area</h1>
+        <div className="bg-black aspect-video rounded-lg flex items-center justify-center">
+          <p className="text-white">Currently playing video {currentVideoId}</p>
+        </div>
+        <div className="mt-4">
+          <h2 className="text-xl font-semibold">Video Title</h2>
+          <p className="text-gray-600 mt-2">Video description and content would go here...</p>
+        </div>
+      </div>
+      
+      {/* Sidebar - Fixed height is crucial */}
+      <div className="w-96 bg-white border-l h-screen">
+        <PlaylistSidebar
+          playlist={samplePlaylist}
+          currentVideoId={currentVideoId}
+          onVideoSelect={setCurrentVideoId}
+        />
+      </div>
+    </div>
+  );
+}
+
+export default PlaylistDemo;

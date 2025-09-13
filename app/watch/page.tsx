@@ -12,7 +12,6 @@ function WatchPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const videoId = searchParams.get('v');
-  // Remove playlist from URL, use localStorage instead
   const [playlistData, setPlaylistData] = useState(null);
 
   const [videoData, setVideoData] = useState({
@@ -128,41 +127,48 @@ function WatchPageContent() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex">
+      <div className="flex h-[calc(100vh-80px)] w-full">
         {/* Video Player Section */}
-        <div className="flex-1 p-4">
-          <div className="max-w-5xl">
-            {(videoData.title && videoData.description && videoData.title !== 'Educational Video' && videoData.description !== 'This is a placeholder description for the educational video.') ? (
-              <VideoPlayer
-                videoId={videoId}
-                title={videoData.title}
-                description={videoData.description}
-                channelTitle={videoData.channelTitle}
-                difficulty={videoData.difficulty}
-                onComplete={() => {
-                  // Handle video completion
-                  console.log('Video completed');
-                }}
-                onNext={() => {
-                  // Navigate to next video in playlist
-                  if (playlist && playlist.videos) {
-                    const currentIndex = playlist.videos.findIndex((v: Video) => v.id === videoId);
-                    const nextVideo = playlist.videos[currentIndex + 1];
-                    if (nextVideo) {
-                      router.push(`/watch?v=${nextVideo.id}`);
+        <div className={`${playlist ? 'flex-1 min-w-0' : 'w-full'} flex flex-col`}>
+          <div className="flex-1 px-14 py-4 overflow-y-auto scrollbar-hide" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
+            <style jsx>{`
+              .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            <div className="w-full">
+              {(videoData.title && videoData.description && videoData.title !== 'Educational Video' && videoData.description !== 'This is a placeholder description for the educational video.') ? (
+                <VideoPlayer
+                  videoId={videoId}
+                  title={videoData.title}
+                  description={videoData.description}
+                  channelTitle={videoData.channelTitle}
+                  difficulty={videoData.difficulty}
+                  onComplete={() => {
+                    // Handle video completion
+                    console.log('Video completed');
+                  }}
+                  onNext={() => {
+                    // Navigate to next video in playlist
+                    if (playlist && playlist.videos) {
+                      const currentIndex = playlist.videos.findIndex((v: Video) => v.id === videoId);
+                      const nextVideo = playlist.videos[currentIndex + 1];
+                      if (nextVideo) {
+                        router.push(`/watch?v=${nextVideo.id}`);
+                      }
                     }
-                  }
-                }}
-              />
-            ) : (
-              <div className="text-center py-16 text-muted-foreground">Loading video details...</div>
-            )}
+                  }}
+                />
+              ) : (
+                <div className="text-center py-16 text-muted-foreground">Loading video details...</div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Playlist Sidebar */}
+        {/* Playlist Sidebar - Fixed width, no gaps */}
         {playlist && (
-          <div className="w-96 border-l bg-background/50 backdrop-blur-sm">
+          <div className="w-[402px] flex-shrink-0 h-full border-l bg-background">
             <PlaylistSidebar
               playlist={playlist}
               currentVideoId={videoId}
@@ -172,7 +178,7 @@ function WatchPageContent() {
             />
           </div>
         )}
-      </main>
+      </div>
     </div>
   );
 }
