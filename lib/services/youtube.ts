@@ -46,8 +46,10 @@ export class YouTubeService {
 
       const searchResponse = await fetch(searchUrl);
       const searchData: YouTubeSearchResponse = await searchResponse.json();
+      console.log('YouTube Search Response:', searchData); // Debug log
 
       if (!searchData.items || searchData.items.length === 0) {
+        console.error('No items found or API error:', searchData); // Debug log
         return [];
       }
 
@@ -57,6 +59,7 @@ export class YouTubeService {
       const detailsUrl = `${this.baseUrl}/videos?part=contentDetails&id=${videoIds}&key=${apiKey}`;
       const detailsResponse = await fetch(detailsUrl);
       const detailsData: YouTubeVideoDetailsResponse = await detailsResponse.json();
+      console.log('YouTube Details Response:', detailsData); // Debug log
 
       // Combine search results with video details
       return searchData.items.map((item, index) => ({

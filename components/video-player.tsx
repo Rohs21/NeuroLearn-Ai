@@ -66,6 +66,24 @@ export function VideoPlayer({
     }
   };
 
+  // Add handler to save history when completed
+  const handleComplete = async () => {
+    try {
+      await fetch('/api/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoId,
+          watchTime: 0, // You can pass actual watch time if tracked
+          completed: true,
+        }),
+      });
+      if (onComplete) onComplete();
+    } catch (error) {
+      console.error('Failed to save history:', error);
+    }
+  };
+
   const handleQuizSubmit = () => {
     setQuizSubmitted(true);
   };
@@ -107,7 +125,7 @@ export function VideoPlayer({
               
               <div className="flex gap-2">
                 {onComplete && (
-                  <Button onClick={onComplete} variant="outline">
+                  <Button onClick={handleComplete} variant="outline">
                     <CheckCircle2 className="h-4 w-4 mr-2" />
                     Complete
                   </Button>
