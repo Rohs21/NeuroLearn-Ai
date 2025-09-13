@@ -58,6 +58,7 @@
     "embla-carousel-react": "^8.3.0",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
+    "ethers": "^6.15.0",
     "input-otp": "^1.2.4",
     "lucide-react": "^0.446.0",
     "next": "13.5.1",
@@ -79,5 +80,9 @@
     "typescript": "5.2.2",
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
+  },
+  "optionalDependencies": {
+    "utf-8-validate": "^6.0.5",
+    "ws": "^8.18.3"
   }
 }
