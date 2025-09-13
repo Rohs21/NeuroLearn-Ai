@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth"
 import { YouTubeService } from '@/lib/services/youtube';
 import { GeminiService } from '@/lib/services/gemini';
-import { db } from '@/lib/db';
-import { playlists, videos, searchHistory } from '@/lib/db/schema';
+import { PrismaClient } from '@prisma/client';
+import { Session } from "next-auth"
+
+const prisma = new PrismaClient()
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions) as Session & { user: { id: string } }
     const { query, language = 'en', difficulty = 'beginner' } = await request.json();
 
     if (!query) {
@@ -66,6 +71,38 @@ export async function POST(request: NextRequest) {
       return aDiff - bDiff;
     });
 
+    // Save videos to database if user is authenticated
+    if (session?.user?.id) {
+      const videoPromises = sortedVideos.map(async (video) => {
+        try {
+          return await prisma.video.upsert({
+            where: {
+              youtubeId: video.id,
+            },
+            update: {
+              title: video.title,
+              description: video.description,
+              thumbnail: video.thumbnailUrl,
+              duration: video.duration,
+            },
+            create: {
+              youtubeId: video.id,
+              title: video.title,
+              description: video.description,
+              thumbnail: video.thumbnailUrl,
+              duration: video.duration,
+              userId: session.user.id,
+            },
+          });
+        } catch (error) {
+          console.error(`Error saving video ${video.id}:`, error);
+          return null;
+        }
+      });
+
+      await Promise.allSettled(videoPromises);
+    }
+
     // Create playlist
     const playlistData = {
       title: `${query} - Complete Learning Path`,
@@ -77,9 +114,6 @@ export async function POST(request: NextRequest) {
       completedVideos: 0,
       videos: sortedVideos,
     };
-
-    // Note: Database operations removed for now to focus on core functionality
-    // TODO: Implement user authentication and database persistence
 
     return NextResponse.json({ 
       playlist: playlistData,
