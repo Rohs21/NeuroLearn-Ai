@@ -1,12 +1,17 @@
  'use client';
+
+
+'use client';
+
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, BookOpen, Clock, TrendingUp, Star, History } from 'lucide-react';
+import { GraduationCap, BookOpen, Clock, TrendingUp, Star, History, Award } from 'lucide-react';
 
 // ---------- Types ----------
 type Stats = {
@@ -42,8 +47,18 @@ type Bookmark = {
   url: string;
 };
 
+type Badge = {
+  id: string;
+  title: string;
+  description?: string;
+  imageUrl?: string;
+  awardedAt: string;
+  moduleId?: string;
+};
+
 // ---------- Component ----------
 export default function Dashboard() {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats>({
     totalPlaylists: 0,
     totalVideos: 0,
@@ -54,6 +69,7 @@ export default function Dashboard() {
   const [recentPlaylists, setRecentPlaylists] = useState<Playlist[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [badges, setBadges] = useState<Badge[]>([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -82,6 +98,23 @@ export default function Dashboard() {
       }
     } catch (error) {
       setSearchHistory([]);
+    }
+
+    // Fetch badges from API
+    try {
+      const response = await fetch('/api/badge/award', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await response.json();
+      if (response.ok && data.badges) {
+        setBadges(data.badges);
+      } else {
+        setBadges([]);
+      }
+    } catch (error) {
+      setBadges([]);
     }
   };
 
@@ -199,11 +232,42 @@ export default function Dashboard() {
 
           {/* Tabs for different sections */}
           <Tabs defaultValue="recent" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="recent">Recent Activity</TabsTrigger>
               <TabsTrigger value="history">Search History</TabsTrigger>
               <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
+              <TabsTrigger value="badges">Badges</TabsTrigger>
             </TabsList>
+            <TabsContent value="badges" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Award className="h-5 w-5" />
+                    Earned Badges
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {badges.length === 0 ? (
+                      <p className="text-muted-foreground">No badges earned yet.</p>
+                    ) : (
+                      badges.map((badge) => (
+                        <div key={badge.id} className="flex items-center gap-4 p-3 border rounded-lg">
+                          {badge.imageUrl && (
+                            <img src={badge.imageUrl} alt={badge.title} className="h-10 w-10 rounded-full object-cover" />
+                          )}
+                          <div>
+                            <p className="font-medium">{badge.title}</p>
+                            <p className="text-sm text-muted-foreground">{badge.description}</p>
+                            <p className="text-xs text-muted-foreground">Awarded: {new Date(badge.awardedAt).toLocaleString()}</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
             <TabsContent value="recent" className="space-y-4">
               <Card>

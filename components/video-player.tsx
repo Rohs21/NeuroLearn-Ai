@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,7 @@ export function VideoPlayer({
   onComplete,
   onNext
 }: VideoPlayerProps) {
+  const { data: session } = useSession() as { data: { user: { id: string } } | null };
   const [summary, setSummary] = useState<string>('');
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
@@ -68,8 +70,14 @@ export function VideoPlayer({
 
   // Add handler to save history when completed
   const handleComplete = async () => {
+    if (!session?.user?.id) {
+      console.error('User not authenticated');
+      return;
+    }
+
     try {
-      await fetch('/api/history', {
+      // Save completion history
+      const historyResponse = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -78,6 +86,27 @@ export function VideoPlayer({
           completed: true,
         }),
       });
+
+      // Award blockchain badge for first video completion
+      if (historyResponse.ok) {
+        try {
+          await fetch('/api/badge/award', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: session.user.id, // Use actual user ID from session
+              moduleId: 'blockchain-basics',
+              title: '🚀 Blockchain Explorer',
+              description: 'Completed your first blockchain learning video! Welcome to the decentralized future.',
+              imageUrl: 'https://via.placeholder.com/64/4F46E5/FFFFFF?text=🚀',
+            }),
+          });
+          console.log('Blockchain badge awarded!');
+        } catch (badgeError) {
+          console.error('Failed to award badge:', badgeError);
+        }
+      }
+
       if (onComplete) onComplete();
     } catch (error) {
       console.error('Failed to save history:', error);

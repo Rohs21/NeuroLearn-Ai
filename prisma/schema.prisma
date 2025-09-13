@@ -72,11 +72,23 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
+  walletAddress String?   @unique
   accounts      Account[]
   sessions      Session[]
   videos        Video[]
   histories     History[]
+  badges        Badge[]
   createdAt     DateTime  @default(now())
+}
+model Badge {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String?
+  awardedAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  moduleId    String?
 }
 
 model VerificationToken {
