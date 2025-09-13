@@ -1,6 +1,8 @@
+  const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
 'use client';
 
 import { useState, useEffect } from 'react';
+import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +22,14 @@ type SearchHistoryItem = {
   query: string;
   createdAt: string;
   resultsCount: number;
+  video?: {
+    title?: string;
+    youtubeId?: string;
+    // Add other video properties if needed
+  };
+  watchTime?: number;
+  completed?: boolean;
+  viewedAt?: string;
 };
 
 type Playlist = {
@@ -52,7 +62,7 @@ export default function Dashboard() {
   }, []);
 
   const loadDashboardData = async () => {
-    // In a real app, you'd fetch this from your API
+    // Example: fetch stats (still hardcoded)
     setStats({
       totalPlaylists: 12,
       totalVideos: 145,
@@ -60,11 +70,21 @@ export default function Dashboard() {
       totalWatchTime: 2340, // minutes
     });
 
-    setSearchHistory([
-      { query: 'React.js tutorial', createdAt: '2024-01-15', resultsCount: 25 },
-      { query: 'Python machine learning', createdAt: '2024-01-14', resultsCount: 30 },
-      { query: 'JavaScript fundamentals', createdAt: '2024-01-13', resultsCount: 18 },
-    ]);
+    // Fetch search history from API
+    try {
+      const response = await fetch('/api/history', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+      if (response.ok && data.history) {
+        setSearchHistory(data.history);
+      } else {
+        setSearchHistory([]);
+      }
+    } catch (error) {
+      setSearchHistory([]);
+    }
   };
 
   const completionPercentage =
@@ -84,7 +104,9 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm">Profile</Button>
+              <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
+                Logout
+              </Button>
               <ThemeToggle />
             </div>
           </div>
@@ -204,20 +226,30 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <History className="h-5 w-5" />
-                    Search History
+                    Watch History
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {searchHistory.map((search, index) => (
+                    {searchHistory.map((history, index) => (
                       <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                         <div>
-                          <p className="font-medium">{search.query}</p>
+                          <p className="font-medium">{history.video?.title || "Untitled Video"}</p>
                           <p className="text-sm text-muted-foreground">
-                            {search.resultsCount} videos found • {search.createdAt}
+                            Watched {history.watchTime || 0} seconds • {history.completed ? "Completed" : "In Progress"} • {history.viewedAt ? new Date(history.viewedAt).toLocaleString() : ""}
                           </p>
                         </div>
-                        <Button variant="ghost" size="sm">Search Again</Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            if (history.video?.youtubeId && router) {
+                              router.push(`/watch?v=${history.video.youtubeId}`);
+                            }
+                          }}
+                        >
+                          Watch Again
+                        </Button>
                       </div>
                     ))}
                   </div>

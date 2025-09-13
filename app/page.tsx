@@ -1,7 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { SearchBar } from '@/components/search-bar';
 import { PlaylistGrid } from '@/components/playlist-grid';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -13,6 +15,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const { data: session, status } = useSession();
 
   const handleSearch = async (query: string, language: string, difficulty: string) => {
     setIsLoading(true);
@@ -67,7 +70,20 @@ export default function HomePage() {
             </div>
             
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm">Sign In</Button>
+              {status === "authenticated" ? (
+                <>
+                  <Button variant="default" size="sm" onClick={() => router.push('/dashboard')}>
+                    Dashboard
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={() => router.push('/auth/signin')}>
+                  Sign In
+                </Button>
+              )}
               <ThemeToggle />
             </div>
           </div>
