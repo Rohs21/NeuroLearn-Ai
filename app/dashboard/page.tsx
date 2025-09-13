@@ -1,6 +1,4 @@
-  const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
-'use client';
-
+ 'use client';
 import { useState, useEffect } from 'react';
 import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -52,7 +50,7 @@ export default function Dashboard() {
     completedVideos: 0,
     totalWatchTime: 0,
   });
-
+  const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
   const [recentPlaylists, setRecentPlaylists] = useState<Playlist[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);

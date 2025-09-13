@@ -13,10 +13,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { chatSession } from '@/utils/GeminiAIModal'
 import { LoaderCircle } from 'lucide-react'
-import { db } from '@/utils/db'
-import { MockInterview } from '@/utils/'
 import { v4 as uuidv4 } from 'uuid'
-import { useUser } from '@clerk/nextjs'
 import moment from 'moment'
 import { useRouter } from 'next/navigation'
 
@@ -33,7 +30,6 @@ function AddNewInterview(): JSX.Element {
     const [jsonResponse, setJsonResponse] = useState<string>('')
     
     const router = useRouter()
-    const { user } = useUser()
 
     const onSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         setLoading(true)
@@ -57,31 +53,50 @@ function AddNewInterview(): JSX.Element {
             }
         }
 
-        const MockJsonResp: string = (result.response.text()).replace('``````', '')
-        console.log(JSON.parse(MockJsonResp))
-        setJsonResponse(MockJsonResp)
+        let MockJsonResp: string = result.response.text();
+        // Remove code block markers (```json, ```, etc.)
+        MockJsonResp = MockJsonResp.replace(/```json|```/gi, '').trim();
+        // Optionally, extract the first JSON array/object if needed
+        // const match = MockJsonResp.match(/[\[{].*[\]}]/s);
+        // if (match) MockJsonResp = match[0];
+        try {
+            console.log(JSON.parse(MockJsonResp));
+        } catch (e) {
+            console.error('JSON parse error:', e, MockJsonResp);
+        }
+        setJsonResponse(MockJsonResp);
 
         if (MockJsonResp) {
-            const resp: MockInterviewResponse[] = await db.insert(MockInterview)
-                .values({
-                    mockId: uuidv4(),
-                    jsonMockResp: MockJsonResp,
-                    jobPosition: jobPosition,
-                    jobDesc: jobDesc,
-                    jobExperience: jobExperience,
-                    createdBy: user?.primaryEmailAddress?.emailAddress,
-                    createdAt: moment().format('DD-MM-yyyy')
-                }).returning({ mockId: MockInterview.mockId })
-
-            console.log("Inserted ID:", resp)
-            if (resp) {
-                setOpenDailog(false)
-                router.push('/dashboard/interview/' + resp[0]?.mockId)
+            try {
+                const mockId = uuidv4();
+                const resp = await fetch('/api/interview', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mockId: mockId,
+                        jsonMockResp: MockJsonResp,
+                        jobPosition: jobPosition,
+                        jobDesc: jobDesc,
+                        jobExperience: jobExperience,
+                        createdBy: "anonymous",
+                        createdAt: moment().format('YYYY-MM-DD HH:mm:ss'),
+                    })
+                });
+                const data = await resp.json();
+                if (data.success && data.data) {
+                    console.log("Inserted ID:", data.data);
+                    setOpenDailog(false);
+                    router.push('/dashboard/interview/' + mockId);
+                } else {
+                    throw new Error(data.error || 'DB Insert Error');
+                }
+            } catch (err) {
+                console.log("DB Insert Error", err);
             }
         } else {
-            console.log("ERROR")
+            console.log("ERROR");
         }
-        setLoading(false)
+        setLoading(false);
     }
 
     return (
