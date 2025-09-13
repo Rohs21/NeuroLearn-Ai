@@ -1,0 +1,44 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model MockInterview {
+  id           Int      @id @default(autoincrement())
+  jsonMockResp String   @db.Text
+  jobPosition  String   @db.VarChar(255)
+  jobDesc      String   @db.VarChar(255)
+  jobExperience String  @db.VarChar(255)
+  createdBy    String   @db.VarChar(255)
+  createdAt    String?  @db.VarChar(255)
+  mockId       String   @unique @db.VarChar(255)
+  
+  // Relationship to UserAnswer
+  userAnswers  UserAnswer[]
+  
+  @@map("mockInterview")
+}
+
+model UserAnswer {
+  id         Int     @id @default(autoincrement())
+  mockIdRef  String  @db.VarChar(255)
+  question   String  @db.VarChar(255)
+  correctAns String? @db.Text
+  userAns    String? @db.Text
+  feedback   String? @db.Text
+  rating     String? @db.VarChar(255)
+  userEmail  String? @db.VarChar(255)
+  createdAt  String? @db.VarChar(255)
+  
+  // Foreign key relationship
+  mockInterview MockInterview @relation(fields: [mockIdRef], references: [mockId])
+  
+  @@map("userAnswer")
+}

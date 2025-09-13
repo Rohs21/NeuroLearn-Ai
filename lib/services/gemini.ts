@@ -77,20 +77,25 @@ export class GeminiService {
       const response = await result.response;
       const text = response.text();
       console.log('[Gemini DEBUG] Raw quiz response:', text);
-      
-      try {
-        return JSON.parse(text);
-      } catch {
-        // Fallback if JSON parsing fails
-        return [
-          {
-            question: "What is the main topic of this video?",
-            options: ["Concept A", "Concept B", "Concept C", "All of the above"],
-            correctAnswer: 3,
-            explanation: "This video covers multiple related concepts."
-          }
-        ];
+
+      // Extract the first JSON array from the response (works for single-line or compact JSON)
+      let match = text.match(/\[[\s\S]*\]/);
+      if (match) {
+        try {
+          return JSON.parse(match[0]);
+        } catch (e) {
+          console.error('[Gemini DEBUG] JSON parse error:', e);
+        }
       }
+      // Fallback if JSON parsing fails
+      return [
+        {
+          question: "What is the main topic of this video?",
+          options: ["Concept A", "Concept B", "Concept C", "All of the above"],
+          correctAnswer: 3,
+          explanation: "This video covers multiple related concepts."
+        }
+      ];
     } catch (error: any) {
       if (error && error.status === 404) {
         console.error('[Gemini ERROR] Model not found. Please check the model name and your API access.');
@@ -121,7 +126,9 @@ export class GeminiService {
       let jsonString = result.response.text().trim();
 
       // 🧹 Clean response (remove markdown code fences if Gemini adds them)
-      jsonString = jsonString.replace(/json|/g, "").trim();
+      jsonString = jsonString.replace(/```json|```/g, "").trim();
+
+      console.log("[Gemini DEBUG] Cleaned JSON:", jsonString);
 
       const enhancedData = JSON.parse(jsonString);
       return enhancedData;
@@ -131,14 +138,14 @@ export class GeminiService {
         title: jobTitle,
         summary: "Failed to generate AI-enhanced data.",
         keywords: [],
-      };
-    }
-  }
+      };
+    }
+  }
 
   async categorizeDifficulty(title: string, description: string): Promise<string> {
     try {
       const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-      
+
       const prompt = `
         Categorize the difficulty level of this educational content:
         
@@ -156,7 +163,7 @@ export class GeminiService {
       const result = await model.generateContent(prompt);
       const response = await result.response;
       const difficulty = response.text().toLowerCase().trim();
-      
+
       if (['beginner', 'intermediate', 'advanced'].includes(difficulty)) {
         return difficulty;
       }
@@ -167,3 +174,5 @@ export class GeminiService {
     }
   }
 }
+
+
