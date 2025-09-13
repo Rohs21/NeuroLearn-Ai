@@ -77,20 +77,25 @@ export class GeminiService {
       const response = await result.response;
       const text = response.text();
       console.log('[Gemini DEBUG] Raw quiz response:', text);
-      
-      try {
-        return JSON.parse(text);
-      } catch {
-        // Fallback if JSON parsing fails
-        return [
-          {
-            question: "What is the main topic of this video?",
-            options: ["Concept A", "Concept B", "Concept C", "All of the above"],
-            correctAnswer: 3,
-            explanation: "This video covers multiple related concepts."
-          }
-        ];
+
+      // Extract the first JSON array from the response (works for single-line or compact JSON)
+      let match = text.match(/\[[\s\S]*\]/);
+      if (match) {
+        try {
+          return JSON.parse(match[0]);
+        } catch (e) {
+          console.error('[Gemini DEBUG] JSON parse error:', e);
+        }
       }
+      // Fallback if JSON parsing fails
+      return [
+        {
+          question: "What is the main topic of this video?",
+          options: ["Concept A", "Concept B", "Concept C", "All of the above"],
+          correctAnswer: 3,
+          explanation: "This video covers multiple related concepts."
+        }
+      ];
     } catch (error: any) {
       if (error && error.status === 404) {
         console.error('[Gemini ERROR] Model not found. Please check the model name and your API access.');
@@ -132,3 +137,5 @@ export class GeminiService {
     }
   }
 }
+
+

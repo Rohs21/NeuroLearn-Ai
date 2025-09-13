@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from "next/navigation";
 import { VideoCard } from './video-card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -23,10 +24,11 @@ export function PlaylistGrid({ playlist, onVideoPlay, onBookmarkPlaylist }: Play
     ? (playlist.completedVideos / playlist.totalVideos) * 100 
     : 0;
 
+  const router = useRouter();
   return (
     <div className="space-y-6">
       {/* Playlist Header */}
-      <div className="bg-card border rounded-lg p-6">
+      <div className="bg-card border rounded-lg p-6 display-grid">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <h1 className="text-2xl font-bold mb-2">{playlist.title}</h1>
@@ -44,12 +46,25 @@ export function PlaylistGrid({ playlist, onVideoPlay, onBookmarkPlaylist }: Play
             </div>
           </div>
 
-          {onBookmarkPlaylist && (
-            <Button variant="outline" onClick={onBookmarkPlaylist}>
-              <Star className="h-4 w-4 mr-2" />
-              Bookmark Playlist
+          <div className="flex flex-col gap-3">
+            {onBookmarkPlaylist && (
+              <Button 
+                variant="outline" 
+                onClick={onBookmarkPlaylist}
+              >
+                <Star className="h-4 w-4 mr-2" />
+                Bookmark Playlist
+              </Button>
+            )}
+
+            <Button 
+              variant="outline" 
+              onClick={() => router.push("/dashboard/AddInterview")}
+            >
+              Give Interview
             </Button>
-          )}
+          </div>
+
         </div>
 
         {/* Progress Bar */}
