@@ -62,7 +62,6 @@ export default function Dashboard() {
     completedVideos: 0,
     totalWatchTime: 0,
   });
-  const router = typeof window !== 'undefined' ? require('next/navigation').useRouter() : null;
   const [recentPlaylists, setRecentPlaylists] = useState<Playlist[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
