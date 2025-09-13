@@ -104,6 +104,41 @@ export class GeminiService {
       return [];
     }
   }
+  async enhanceJobKeywords(jobTitle: string, jobDescription: string) {
+    try {
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+      const prompt = `
+      You are an AI career and learning assistant. Your task is to analyze a job description and provide a structured learning plan.
+
+      Analyze the following job title and description and return a JSON object with three properties:
+      1. "title": A concise, curated job title (e.g., "Full Stack Developer").
+      2. "summary": A brief, one-sentence summary of the core technical requirements for this role.
+      3. "keywords": An array of the top 10 most critical technologies and concepts from the description.
+
+      Do not include any conversational text, explanations, or code formatting. The entire response must be a valid JSON object.
+
+      Job Title: ${jobTitle}
+      Job Description:
+      ${jobDescription}
+    `;
+
+      const result = await model.generateContent(prompt);
+      let jsonString = result.response.text().trim();
+
+      // 🧹 Clean response (remove markdown code fences if Gemini adds them)
+      jsonString = jsonString.replace(/json|/g, "").trim();
+
+      const enhancedData = JSON.parse(jsonString);
+      return enhancedData;
+    } catch (error) {
+      console.error("Error enhancing job keywords with Gemini:", error);
+      return {
+        title: jobTitle,
+        summary: "Failed to generate AI-enhanced data.",
+        keywords: [],
+      };
+    }
+  }
 
   async categorizeDifficulty(title: string, description: string): Promise<string> {
     try {
