@@ -84,14 +84,11 @@
     "vaul": "^0.9.9",
     "zod": "^3.23.8"
   },
-
   "optionalDependencies": {
     "utf-8-validate": "^6.0.5",
     "ws": "^8.18.3"
   },
-
   "devDependencies": {
     "@types/uuid": "^10.0.0"
-
   }
 }

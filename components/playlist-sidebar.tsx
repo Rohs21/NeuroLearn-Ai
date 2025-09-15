@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Play, Clock, BookOpen, CheckCircle2 } from 'lucide-react';
+import { Play, Clock, BookOpen, CheckCircle2, Shuffle, Repeat, MoreVertical, PlayCircle } from 'lucide-react';
 
 interface PlaylistSidebarProps {
   playlist: {
@@ -29,51 +29,68 @@ interface PlaylistSidebarProps {
 }
 
 export function PlaylistSidebar({ playlist, currentVideoId, onVideoSelect }: PlaylistSidebarProps) {
+  const [isExpanded, setIsExpanded] = useState(true);
+  
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'bg-green-500 text-white';
-      case 'intermediate': return 'bg-yellow-500 text-white';
-      case 'advanced': return 'bg-red-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      case 'beginner': return 'bg-green-100 text-green-800 border-green-200';
+      case 'intermediate': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'advanced': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
+  const currentVideoIndex = playlist.videos.findIndex(video => video.id === currentVideoId);
+
   return (
-    <div className="h-full flex flex-col overflow-y-auto scrollbar-hide">
-      {/* Playlist Header */}
-      <div className="p-4 border-b flex-shrink-0">
-        <h2 className="font-bold text-lg mb-2 line-clamp-2">{playlist.title}</h2>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <BookOpen className="h-4 w-4" />
-            <span>{playlist.totalVideos} videos</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <CheckCircle2 className="h-4 w-4" />
-            <span>{playlist.completedVideos} completed</span>
-          </div>
+    <div className="w-80 bg-white border border-gray-200 rounded-lg shadow-sm">
+      {/* Playlist Header - YouTube Style */}
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="font-semibold text-sm text-gray-900 truncate flex-1">{playlist.title}</h3>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            <MoreVertical className="h-4 w-4" />
+          </Button>
+        </div>
+        
+        <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
+          <span>{playlist.completedVideos} / {playlist.totalVideos}</span>
+          <span className="text-xs">Updated today</span>
+        </div>
+
+        {/* Control Buttons */}
+        <div className="flex items-center gap-2">
+          <Button size="sm" className="flex-1 h-8 text-xs">
+            <Play className="h-3 w-3 mr-1" />
+            Play all
+          </Button>
+          <Button variant="outline" size="sm" className="h-8 w-8 p-0">
+            <Shuffle className="h-3 w-3" />
+          </Button>
         </div>
       </div>
 
-  {/* Video List - Remove ScrollArea since parent handles scrolling */}
-  <div className="flex-1">
-        <div className="p-2">
-          {playlist.videos.map((video, index) => (
+      {/* Video List - Scrollable */}
+      <div className="max-h-96 overflow-y-auto">
+        {playlist.videos.map((video, index) => {
+          const isCurrentVideo = currentVideoId === video.id;
+          
+          return (
             <div
               key={video.id}
-              className={`flex gap-3 p-3 rounded-lg cursor-pointer transition-colors mb-2 ${
-                currentVideoId === video.id
-                  ? 'bg-primary/10 border border-primary/20'
-                  : 'hover:bg-muted/50'
+              className={`flex items-center gap-3 p-2 cursor-pointer transition-colors hover:bg-gray-50 border-l-2 ${
+                isCurrentVideo
+                  ? 'bg-blue-50 border-l-blue-500'
+                  : 'border-l-transparent'
               }`}
               onClick={() => onVideoSelect(video.id)}
             >
-              {/* Video Number */}
-              <div className="flex-shrink-0 w-6 h-6 flex items-center justify-center">
-                {currentVideoId === video.id ? (
-                  <Play className="h-4 w-4 text-primary" />
+              {/* Video Index/Play Icon */}
+              <div className="flex-shrink-0 w-6 flex items-center justify-center">
+                {isCurrentVideo ? (
+                  <PlayCircle className="h-4 w-4 text-blue-600 fill-current" />
                 ) : (
-                  <span className="text-sm text-muted-foreground">{index + 1}</span>
+                  <span className="text-xs text-gray-500 font-medium">{index + 1}</span>
                 )}
               </div>
 
@@ -82,85 +99,60 @@ export function PlaylistSidebar({ playlist, currentVideoId, onVideoSelect }: Pla
                 <img
                   src={video.thumbnailUrl}
                   alt={video.title}
-                  className="w-20 h-12 object-cover rounded"
+                  className="w-16 h-9 object-cover rounded"
                 />
-                <div className="absolute bottom-1 right-1 bg-black/80 text-white px-1 py-0.5 rounded text-xs flex items-center gap-1">
-                  <Clock className="h-2 w-2" />
+                {/* Duration Badge */}
+                <div className="absolute bottom-0.5 right-0.5 bg-black bg-opacity-80 text-white px-1 py-0.5 rounded text-xs font-medium">
                   {video.duration}
                 </div>
+                {video.isCompleted && (
+                  <div className="absolute top-0.5 left-0.5 bg-green-500 rounded-full p-0.5">
+                    <CheckCircle2 className="h-2 w-2 text-white" />
+                  </div>
+                )}
               </div>
 
               {/* Video Info */}
               <div className="flex-1 min-w-0">
-                <h3 className={`text-sm font-medium line-clamp-2 mb-1 ${
-                  currentVideoId === video.id ? 'text-primary' : ''
+                <h4 className={`text-sm font-medium leading-tight mb-1 line-clamp-2 ${
+                  isCurrentVideo ? 'text-blue-600' : 'text-gray-900'
                 }`}>
                   {video.title}
-                </h3>
-                <p className="text-xs text-muted-foreground mb-2">{video.channelTitle}</p>
+                </h4>
+                <p className="text-xs text-gray-500 mb-1">{video.channelTitle}</p>
                 
-                <div className="flex items-center gap-2">
-                  <Badge className={`text-xs ${getDifficultyColor(video.difficulty)}`}>
+                <div className="flex items-center justify-between">
+                  <Badge 
+                    variant="outline" 
+                    className={`text-xs px-1.5 py-0.5 h-5 ${getDifficultyColor(video.difficulty)}`}
+                  >
                     {video.difficulty}
                   </Badge>
-                  {video.isCompleted && (
-                    <CheckCircle2 className="h-3 w-3 text-green-500" />
+                  {isCurrentVideo && (
+                    <div className="flex items-center">
+                      <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
-          ))}
+          );
+        })}
+      </div>
+
+      {/* Progress Bar */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+          <span>Progress</span>
+          <span>{Math.round((playlist.completedVideos / playlist.totalVideos) * 100)}%</span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-1">
+          <div 
+            className="bg-blue-600 h-1 rounded-full transition-all duration-300"
+            style={{ width: `${(playlist.completedVideos / playlist.totalVideos) * 100}%` }}
+          ></div>
         </div>
       </div>
     </div>
   );
 }
-
-// Example usage with sample data for demonstration
-function PlaylistDemo() {
-  const [currentVideoId, setCurrentVideoId] = useState('1');
-  
-  const samplePlaylist = {
-    title: "React Advanced Patterns",
-    description: "Learn advanced React patterns and techniques",
-    totalVideos: 15,
-    completedVideos: 3,
-    videos: Array.from({ length: 15 }, (_, i) => ({
-      id: String(i + 1),
-      title: `React Pattern ${i + 1}: Advanced Techniques for Modern Development`,
-      channelTitle: "React Mastery",
-      duration: `${Math.floor(Math.random() * 20) + 5}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
-      thumbnailUrl: `https://picsum.photos/120/68?random=${i + 1}`,
-      difficulty: ['beginner', 'intermediate', 'advanced'][Math.floor(Math.random() * 3)],
-      order: i + 1,
-      isCompleted: Math.random() > 0.7
-    }))
-  };
-
-  return (
-    <div className="h-screen flex">
-      {/* Main content area */}
-      <div className="flex-1 p-8 bg-gray-50">
-        <h1 className="text-2xl font-bold mb-4">Video Player Area</h1>
-        <div className="bg-black aspect-video rounded-lg flex items-center justify-center">
-          <p className="text-white">Currently playing video {currentVideoId}</p>
-        </div>
-        <div className="mt-4">
-          <h2 className="text-xl font-semibold">Video Title</h2>
-          <p className="text-gray-600 mt-2">Video description and content would go here...</p>
-        </div>
-      </div>
-      
-      {/* Sidebar - Fixed height is crucial */}
-      <div className="w-96 bg-white border-l h-screen">
-        <PlaylistSidebar
-          playlist={samplePlaylist}
-          currentVideoId={currentVideoId}
-          onVideoSelect={setCurrentVideoId}
-        />
-      </div>
-    </div>
-  );
-}
-
-export default PlaylistDemo;
