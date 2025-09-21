@@ -23,6 +23,7 @@ interface VideoCardProps {
 
 export function VideoCard({ video, onPlay, onBookmark }: VideoCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [click, setClick] = useState(false);
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -102,8 +103,9 @@ export function VideoCard({ video, onPlay, onBookmark }: VideoCardProps) {
                 onClick={(e) => {
                   e.stopPropagation();
                   onBookmark(video.id);
-                }}
-                className="p-2"
+                  setClick(true);
+                  }}
+                className={`p-2 ${click ? "bg-black text-white" : ""}`}
               >
                 <Star className={`h-4 w-4 ${video.isBookmarked ? 'fill-current text-yellow-500' : ''}`} />
               </Button>
