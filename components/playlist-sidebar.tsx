@@ -154,6 +154,7 @@ export function PlaylistSidebar({ playlist, currentVideoId, onVideoSelect }: Pla
           ></div>
         </div>
       </div>
+      
     </div>
   );
 }
