@@ -27,10 +27,10 @@ export function VideoCard({ video, onPlay, onBookmark }: VideoCardProps) {
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'bg-green-500 text-white';
-      case 'intermediate': return 'bg-yellow-500 text-white';
-      case 'advanced': return 'bg-red-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      case 'beginner': return 'bg-green-500 dark:bg-green-600 text-white';
+      case 'intermediate': return 'bg-yellow-500 dark:bg-yellow-600 text-white';
+      case 'advanced': return 'bg-red-500 dark:bg-red-600 text-white';
+      default: return 'bg-gray-500 dark:bg-gray-600 text-white';
     }
   };
 
@@ -53,7 +53,7 @@ export function VideoCard({ video, onPlay, onBookmark }: VideoCardProps) {
           />
           
           {/* Overlay */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 dark:group-hover:bg-black/30 transition-all duration-300 flex items-center justify-center">
             <Play className="h-12 w-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg" />
           </div>
 
@@ -71,14 +71,14 @@ export function VideoCard({ video, onPlay, onBookmark }: VideoCardProps) {
 
           {/* Completion indicator */}
           {video.isCompleted && (
-            <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
+            <div className="absolute top-2 right-2 bg-green-500 dark:bg-green-600 text-white rounded-full p-1">
               <Play className="h-3 w-3" />
             </div>
           )}
         </div>
 
         <div className="p-4">
-          <h3 className="font-semibold text-sm line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+          <h3 className="font-semibold text-sm line-clamp-2 mb-2 text-foreground group-hover:text-primary transition-colors">
             {video.title}
           </h3>
           <p className="text-muted-foreground text-xs mb-3">{video.channelTitle}</p>
@@ -105,7 +105,7 @@ export function VideoCard({ video, onPlay, onBookmark }: VideoCardProps) {
                   onBookmark(video.id);
                   setClick(true);
                   }}
-                className={`p-2 ${click ? "bg-black text-white" : ""}`}
+                className={`p-2 ${click ? "bg-muted text-muted-foreground" : ""}`}
               >
                 <Star className={`h-4 w-4 ${video.isBookmarked ? 'fill-current text-yellow-500' : ''}`} />
               </Button>

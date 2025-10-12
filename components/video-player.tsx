@@ -119,10 +119,10 @@ export function VideoPlayer({
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'beginner': return 'bg-green-500';
-      case 'intermediate': return 'bg-yellow-500';
-      case 'advanced': return 'bg-red-500';
-      default: return 'bg-gray-500';
+      case 'beginner': return 'bg-green-500 dark:bg-green-600';
+      case 'intermediate': return 'bg-yellow-500 dark:bg-yellow-600';
+      case 'advanced': return 'bg-red-500 dark:bg-red-600';
+      default: return 'bg-gray-500 dark:bg-gray-600';
     }
   };
 
@@ -242,11 +242,11 @@ export function VideoPlayer({
                               selectedAnswers[qIndex] === oIndex 
                                 ? quizSubmitted
                                   ? oIndex === question.correctAnswer
-                                    ? 'bg-green-100 border-green-500 text-green-700'
-                                    : 'bg-red-100 border-red-500 text-red-700'
+                                    ? 'bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-700 text-green-700 dark:text-green-200'
+                                    : 'bg-red-100 dark:bg-red-900 border-red-500 dark:border-red-700 text-red-700 dark:text-red-200'
                                   : 'bg-primary/10 border-primary'
                                 : quizSubmitted && oIndex === question.correctAnswer
-                                ? 'bg-green-100 border-green-500 text-green-700'
+                                ? 'bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-700 text-green-700 dark:text-green-200'
                                 : 'hover:bg-muted'
                             }`}
                           >
@@ -256,8 +256,8 @@ export function VideoPlayer({
                       </div>
 
                       {quizSubmitted && (
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                          <p className="text-sm text-blue-700">{question.explanation}</p>
+                        <div className="mt-3 p-3 bg-blue-50 dark:bg-slate-800 rounded-lg">
+                          <p className="text-sm text-blue-700 dark:text-blue-200">{question.explanation}</p>
                         </div>
                       )}
                       
@@ -291,7 +291,7 @@ export function VideoPlayer({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Take notes while watching the video..."
-                className="w-full h-40 p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full h-40 p-3 border rounded-lg resize-none bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <Button className="mt-3">Save Notes</Button>
             </CardContent>
