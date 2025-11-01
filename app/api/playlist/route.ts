@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     }
 
     // Create playlist
-    const playlist = await prisma.playlist.create({
+    const playlist = await (prisma as any).playlist.create({
       data: {
         title,
         description,

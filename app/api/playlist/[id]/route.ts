@@ -6,7 +6,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const playlist = await prisma.playlist.findUnique({
+    const playlist = await (prisma as any).playlist.findUnique({
       where: { id: params.id }
     });
 
