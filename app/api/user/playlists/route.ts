@@ -7,26 +7,27 @@ import { prisma } from '@/lib/prisma';
 export async function GET(req: Request) {
   try {
     const session = (await getServerSession(authOptions)) as Session | null;
-    
+
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's playlists
+    // Find user by email
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: {
-        playlists: {
-          orderBy: { createdAt: 'desc' }
-        }
-      }
     });
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    return NextResponse.json(user.playlists);
+    // Fetch playlists separately and order them
+    const playlists = await prisma.playlist.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return NextResponse.json(playlists);
   } catch (error) {
     console.error('Failed to fetch playlists:', error);
     return NextResponse.json(
