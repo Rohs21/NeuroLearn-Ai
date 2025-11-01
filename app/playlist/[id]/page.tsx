@@ -80,10 +80,10 @@ export default function PlaylistPage({ params }: { params: { id: string } }) {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-bold mb-4">{playlist.title}</h1>
+        {/* <h1 className="text-2xl font-bold mb-4">{playlist.title}</h1>
         {playlist.description && (
           <p className="text-muted-foreground mb-8">{playlist.description}</p>
-        )}
+        )} */}
         <PlaylistGrid 
           playlist={playlist.videos}
           onVideoPlay={handleVideoPlay}

@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -59,13 +58,6 @@ type Badge = {
 // ---------- Component ----------
 export default function Dashboard() {
   const router = useRouter();
-  const { data: session, status } = useSession({
-    required: true,
-    onUnauthenticated() {
-      router.push('/auth/signin');
-    },
-  });
-
   const [stats, setStats] = useState<Stats>({
     totalPlaylists: 0,
     totalVideos: 0,
@@ -78,20 +70,8 @@ export default function Dashboard() {
   const [badges, setBadges] = useState<Badge[]>([]);
 
   useEffect(() => {
-    if (session) {
-      loadDashboardData();
-    }
-  }, [session]);
-
-  if (status === "loading") {
-    return <div className="min-h-screen flex items-center justify-center">
-      <p className="text-lg">Loading...</p>
-    </div>;
-  }
-
-  if (!session) {
-    return null;
-  }
+    loadDashboardData();
+  }, []);
 
   const loadDashboardData = async () => {
     // Example: fetch stats (still hardcoded)
@@ -167,7 +147,7 @@ export default function Dashboard() {
           {/* Welcome Section */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold mb-2">Welcome back! 👋</h2>
-            <p className="text-muted-foreground">Continue your learning journey</p>
+            <p className="text-muted-foreground">Track your learning progress</p>
           </div>
 
           {/* Stats Grid */}
@@ -288,17 +268,39 @@ export default function Dashboard() {
             </TabsContent>
 
             <TabsContent value="recent" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Continue Learning
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">Your recent playlists will appear here.</p>
-                </CardContent>
-              </Card>
+              {recentPlaylists.length > 0 ? (
+                recentPlaylists.map((playlist) => (
+                  <Card key={playlist.id}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Clock className="h-5 w-5" />
+                        {playlist.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground">{playlist.description}</p>
+                      <Button 
+                        className="mt-4" 
+                        onClick={() => router.push(`/playlist/${playlist.id}`)}
+                      >
+                        Continue Learning
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Clock className="h-5 w-5" />
+                      No Recent Activity
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground">Start learning by exploring our playlists!</p>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="history" className="space-y-4">
