@@ -7,7 +7,21 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token
+      // Allow unauthenticated GET access to /watch so client-side localStorage-driven
+      // playback doesn't get redirected by server-side auth checks. For other
+      // protected routes, require a token as before.
+      authorized: ({ token, req }) => {
+        try {
+          const pathname = req.nextUrl.pathname || ''
+          // Allow read-only GET requests to the watch page without a token
+          if (pathname.startsWith('/watch') && req.method === 'GET') {
+            return true
+          }
+        } catch (e) {
+          // ignore and fallthrough to token check
+        }
+        return !!token
+      }
     },
   }
 )

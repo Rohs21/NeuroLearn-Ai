@@ -9,7 +9,8 @@ declare global {
     ethereum?: any;
   }
 }
-import { ethers } from 'ethers';
+// Import ethers dynamically inside client-only functions to avoid bundling
+// server-only optional dependencies (like ws/bufferutil) into the client build.
 
 const WalletConnectButton: React.FC = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
@@ -24,6 +25,7 @@ const WalletConnectButton: React.FC = () => {
       return;
     }
     try {
+      const { ethers } = await import('ethers')
       const provider = new ethers.BrowserProvider(window.ethereum);
       await window.ethereum.request({ method: 'eth_requestAccounts' });
       const signer = await provider.getSigner();
@@ -42,6 +44,7 @@ const WalletConnectButton: React.FC = () => {
     }
     try {
       setIsVerifying(true);
+      const { ethers } = await import('ethers')
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const message = `Sign in to NeuroLearn-Ai as ${walletAddress}`;
