@@ -35,7 +35,9 @@ type SearchHistoryItem = {
 type Playlist = {
   id: string;
   title: string;
-  videoCount: number;
+  description?: string;
+  videos: any[];
+  createdAt: string;
 };
 
 type Bookmark = {

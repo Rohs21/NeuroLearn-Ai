@@ -36,7 +36,31 @@ export default function HomePage() {
       }
 
       if (data.playlist) {
-        setPlaylist(data.playlist);
+        // Always try to save the playlist and get a unique URL
+        try {
+          const saveResponse = await fetch('/api/playlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: `Learning Path: ${query}`,
+              description: `AI-curated learning path for ${query} (${language}, ${difficulty})`,
+              videos: data.playlist
+            }),
+          });
+          
+          if (saveResponse.ok) {
+            const savedData = await saveResponse.json();
+            // Redirect to the playlist page
+            router.push(`/playlist/${savedData.id}`);
+            return;
+          } else {
+            // If saving fails (e.g., user not authenticated), show in current page
+            setPlaylist(data.playlist);
+          }
+        } catch (err) {
+          console.error('Failed to save playlist:', err);
+          setPlaylist(data.playlist);
+        }
       } else {
         setError(data.message || 'No videos found for your search.');
       }
