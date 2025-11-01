@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -58,6 +59,13 @@ type Badge = {
 // ---------- Component ----------
 export default function Dashboard() {
   const router = useRouter();
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      router.push('/auth/signin');
+    },
+  });
+
   const [stats, setStats] = useState<Stats>({
     totalPlaylists: 0,
     totalVideos: 0,
@@ -70,8 +78,20 @@ export default function Dashboard() {
   const [badges, setBadges] = useState<Badge[]>([]);
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    if (session) {
+      loadDashboardData();
+    }
+  }, [session]);
+
+  if (status === "loading") {
+    return <div className="min-h-screen flex items-center justify-center">
+      <p className="text-lg">Loading...</p>
+    </div>;
+  }
+
+  if (!session) {
+    return null;
+  }
 
   const loadDashboardData = async () => {
     // Example: fetch stats (still hardcoded)

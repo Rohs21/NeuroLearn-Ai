@@ -9,6 +9,10 @@ const prisma = new PrismaClient()
 
 export const authOptions: any = {
   adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -83,9 +87,6 @@ export const authOptions: any = {
       }
     })
   ],
-  session: {
-    strategy: "jwt"
-  },
   pages: {
     signIn: "/auth/signin"
   },

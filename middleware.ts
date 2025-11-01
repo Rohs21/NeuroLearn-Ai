@@ -3,7 +3,11 @@ import { withAuth } from "next-auth/middleware"
 export default withAuth(
   function middleware(req) {
     // Add any additional middleware logic here
-    console.log("Token:", req.nextauth.token)
+    if (!req.nextauth?.token) {
+      console.log("No auth token found");
+      return;
+    }
+    console.log("Token present:", !!req.nextauth.token);
   },
   {
     callbacks: {
