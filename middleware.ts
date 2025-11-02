@@ -16,15 +16,24 @@ export default withAuth(
       // protected routes, require a token as before.
       authorized: ({ token, req }) => {
         try {
-          const pathname = req.nextUrl.pathname || ''
+          const pathname = req.nextUrl.pathname || '';
+          
+          // Strictly require authentication for dashboard routes
+          if (pathname.startsWith('/dashboard')) {
+            return !!token;
+          }
+
           // Allow read-only GET requests to the watch page without a token
           if (pathname.startsWith('/watch') && req.method === 'GET') {
-            return true
+            return true;
           }
+
+          // For other protected routes
+          return !!token;
         } catch (e) {
-          // ignore and fallthrough to token check
+          console.error('Auth middleware error:', e);
+          return false;
         }
-        return !!token
       }
     },
   }

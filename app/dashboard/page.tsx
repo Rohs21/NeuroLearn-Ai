@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Navbar } from '@/components/navbar';
 import { GraduationCap, BookOpen, Clock, TrendingUp, Star, History, Award } from 'lucide-react';
 
 // ---------- Types ----------
@@ -122,14 +121,33 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar showAuthButtons={true} isAuthenticated={true} />
+      {/* Header */}
+      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+                <GraduationCap className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <h1 className="text-xl font-bold">NeuroLearn-AI</h1>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
+                Logout
+              </Button>
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </header>
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
           {/* Welcome Section */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold mb-2">Welcome back! 👋</h2>
-            <p className="text-muted-foreground">Track your learning progress</p>
+            <p className="text-muted-foreground">Continue your learning journey</p>
           </div>
 
           {/* Stats Grid */}
@@ -250,39 +268,17 @@ export default function Dashboard() {
             </TabsContent>
 
             <TabsContent value="recent" className="space-y-4">
-              {recentPlaylists.length > 0 ? (
-                recentPlaylists.map((playlist) => (
-                  <Card key={playlist.id}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Clock className="h-5 w-5" />
-                        {playlist.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground">{playlist.description}</p>
-                      <Button 
-                        className="mt-4" 
-                        onClick={() => router.push(`/playlist/${playlist.id}`)}
-                      >
-                        Continue Learning
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))
-              ) : (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
-                      No Recent Activity
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-muted-foreground">Start learning by exploring our playlists!</p>
-                  </CardContent>
-                </Card>
-              )}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Continue Learning
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground">Your recent playlists will appear here.</p>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="history" className="space-y-4">
