@@ -9,6 +9,7 @@ import { PlaylistGrid } from '@/components/playlist-grid';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { GraduationCap, Sparkles, TrendingUp, Users } from 'lucide-react';
+import { Navbar } from '@/components/navbar';
 
 export default function HomePage() {
   const [playlist, setPlaylist] = useState(null);
@@ -82,37 +83,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <h1 className="text-xl font-bold">NeuroLearn-AI</h1>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {status === "authenticated" ? (
-                <>
-                  <Button variant="default" size="sm" onClick={() => router.push('/dashboard')}>
-                    Dashboard
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
-                    Logout
-                  </Button>
-                </>
-              ) : (
-                <Button variant="ghost" size="sm" onClick={() => router.push('/auth/signin')}>
-                  Sign In
-                </Button>
-              )}
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
+      <Navbar showAuthButtons={true} isAuthenticated={status === "authenticated"} />
 
       <main className="container mx-auto px-4 py-8">
         {!playlist && !isLoading && (

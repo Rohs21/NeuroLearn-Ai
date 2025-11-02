@@ -7,6 +7,7 @@ import { PlaylistSidebar } from '@/components/playlist-sidebar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, GraduationCap } from 'lucide-react';
+import { Navbar } from '@/components/navbar';
 
 function WatchPageContent() {
   const searchParams = useSearchParams();
@@ -99,32 +100,7 @@ function WatchPageContent() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="flex items-center gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back
-              </Button>
-              
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                  <GraduationCap className="h-5 w-5 text-primary-foreground" />
-                </div>
-                <h1 className="text-xl font-bold">NeuroLearn-AI</h1>
-              </div>
-            </div>
-            
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <Navbar showBackButton={true} showAuthButtons={false} />
 
       {/* Main Content */}
       <div className="flex h-[calc(100vh-80px)] w-full">
