@@ -10,9 +10,15 @@ export async function GET(req: NextRequest) {
 	} catch (e) {
 		console.warn('[NextAuth][route] GET logging failed', e)
 	}
-	// Forward to NextAuth handler
-	// @ts-ignore
-	return handler(req)
+	try {
+		// @ts-ignore
+		return await handler(req)
+	} catch (e) {
+		console.error('[NextAuth][route] GET handler error', e)
+		// Return a JSON error response to help debugging deployment issues.
+		// Avoid leaking secrets; present only the error message.
+		return NextResponse.json({ error: String(e), message: 'NextAuth GET handler error' }, { status: 500 })
+	}
 }
 
 export async function POST(req: NextRequest) {
@@ -21,6 +27,11 @@ export async function POST(req: NextRequest) {
 	} catch (e) {
 		console.warn('[NextAuth][route] POST logging failed', e)
 	}
-	// @ts-ignore
-	return handler(req)
+	try {
+		// @ts-ignore
+		return await handler(req)
+	} catch (e) {
+		console.error('[NextAuth][route] POST handler error', e)
+		return NextResponse.json({ error: String(e), message: 'NextAuth POST handler error' }, { status: 500 })
+	}
 }
