@@ -30,10 +30,9 @@ export default withAuth(
         try {
           const pathname = req.nextUrl.pathname || '';
           
-          // Strictly require authentication for dashboard routes
-          if (pathname.startsWith('/dashboard')) {
-            return !!token;
-          }
+          // Dashboard routes are intentionally not protected by middleware;
+          // the dashboard page will handle auth client-side and show a
+          // login prompt when necessary.
 
           // Allow read-only GET requests to the watch page without a token
           if (pathname.startsWith('/watch') && req.method === 'GET') {
@@ -53,7 +52,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
     "/watch/:path*",
     "/api/video/:path*",
     "/api/history/:path*",

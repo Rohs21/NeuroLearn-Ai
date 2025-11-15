@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession, signIn } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,9 +69,14 @@ export default function Dashboard() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
 
+  const { data: session, status: sessionStatus } = useSession();
+
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    // Only load protected dashboard data when the user is authenticated.
+    if (sessionStatus === 'authenticated') {
+      loadDashboardData();
+    }
+  }, [sessionStatus]);
 
   const loadDashboardData = async () => {
     // Example: fetch stats (still hardcoded)
@@ -133,9 +138,15 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
-                Logout
-              </Button>
+              {sessionStatus === 'authenticated' ? (
+                <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
+                  Logout
+                </Button>
+              ) : (
+                <Button variant="ghost" size="sm" onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}>
+                  Login
+                </Button>
+              )}
               <ThemeToggle />
             </div>
           </div>
@@ -144,11 +155,34 @@ export default function Dashboard() {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold mb-2">Welcome back! 👋</h2>
-            <p className="text-muted-foreground">Continue your learning journey</p>
-          </div>
+          {/* If user is not authenticated, show a prompt instead of loading protected data */}
+          {sessionStatus === 'loading' && (
+            <div className="mb-8">
+              <p className="text-muted-foreground">Checking authentication...</p>
+            </div>
+          )}
+
+          {sessionStatus === 'unauthenticated' && (
+            <div className="mb-8">
+              <Card>
+                <CardContent className="p-6">
+                  <h2 className="text-2xl font-bold mb-2">Please sign in</h2>
+                  <p className="text-muted-foreground mb-4">You need to sign in to view your dashboard.</p>
+                  <Button onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}>Sign in</Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {sessionStatus === 'authenticated' && (
+            <>
+              {/* Welcome Section */}
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold mb-2">Welcome back! 👋</h2>
+                <p className="text-muted-foreground">Continue your learning journey</p>
+              </div>
+            </>
+          )}
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
