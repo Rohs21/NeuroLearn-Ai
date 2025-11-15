@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 
 // Add type declaration for window.ethereum
 declare global {
@@ -18,6 +19,8 @@ const WalletConnectButton: React.FC = () => {
   const [signature, setSignature] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams()
+  const callbackUrl = (searchParams?.get('callbackUrl') as string) || '/'
 
   const connectWallet = async () => {
     if (typeof window.ethereum === 'undefined') {
@@ -64,7 +67,7 @@ const WalletConnectButton: React.FC = () => {
         // Set NextAuth session so navbar updates
         await signIn('credentials', {
           redirect: true,
-          callbackUrl: '/',
+          callbackUrl: callbackUrl,
           address: walletAddress,
         });
       } else {

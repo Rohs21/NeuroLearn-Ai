@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
+import { useSearchParams } from 'next/navigation'
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +17,8 @@ export default function SignInForm() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = (searchParams?.get('callbackUrl') as string) || '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,7 +35,8 @@ export default function SignInForm() {
       if (result?.error) {
         setError("Invalid credentials")
       } else {
-        router.push("/"); // Redirect to landing page
+        // Redirect to the original page the user wanted to visit (if any)
+        router.push(callbackUrl)
       }
     } catch (error) {
       setError("Something went wrong")
