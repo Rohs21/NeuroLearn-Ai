@@ -1,13 +1,25 @@
 import { withAuth } from "next-auth/middleware"
 
+// Basic runtime env check to catch missing NEXTAUTH variables on Vercel/production.
+const _nextAuthUrl = process.env.NEXTAUTH_URL
+const _nextAuthSecretSet = !!process.env.NEXTAUTH_SECRET
+if (!_nextAuthUrl || !_nextAuthSecretSet) {
+  console.warn('[NextAuth][middleware][env-check] NEXTAUTH_URL=%s NEXTAUTH_SECRET_SET=%s', _nextAuthUrl || 'MISSING', _nextAuthSecretSet)
+}
+
 export default withAuth(
   function middleware(req) {
     // Add any additional middleware logic here
-    if (!req.nextauth?.token) {
-      console.log("No auth token found");
-      return;
+    try {
+      const hasToken = !!req.nextauth?.token
+      if (!hasToken) {
+        console.log('[NextAuth][middleware] No auth token found for', req.nextUrl?.pathname)
+        return
+      }
+      console.log('[NextAuth][middleware] Token present for', req.nextUrl?.pathname)
+    } catch (e) {
+      console.error('[NextAuth][middleware] runtime error', e)
     }
-    console.log("Token present:", !!req.nextauth.token);
   },
   {
     callbacks: {
