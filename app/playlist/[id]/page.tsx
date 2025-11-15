@@ -59,7 +59,7 @@ export default function PlaylistPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <Navbar showBackButton={true} showAuthButtons={true} isAuthenticated={true} />
+      <Navbar showBackButton={true} showAuthButtons={true} isAuthenticated={false} />
 
       <main className="container mx-auto px-4 py-8">
         {/* <h1 className="text-2xl font-bold mb-4">{playlist.title}</h1>
