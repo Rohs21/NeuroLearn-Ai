@@ -9,7 +9,10 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      'rounded-lg border bg-card text-card-foreground shadow-sm',
+      // Light-mode: glass effect so background shows through. Dark-mode: keep original card styles.
+      // Ensure readable text in both themes: dark text for light mode, theme-aware for dark mode.
+      'rounded-lg shadow-sm bg-white/10 backdrop-blur-md border-white/20 text-black/90 dark:text-card-foreground',
+      'dark:bg-card dark:border-border',
       className
     )}
     {...props}

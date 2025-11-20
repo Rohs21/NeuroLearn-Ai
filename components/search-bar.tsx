@@ -89,13 +89,14 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
         {popularQueries.map((popularQuery) => (
           <Button
             key={popularQuery}
-            variant="outline"
             size="sm"
             onClick={() => {
               setQuery(popularQuery);
               onSearch(popularQuery, language, difficulty);
             }}
-            className="text-xs"
+            className={
+              "text-xs text-black/90 dark:text-white rounded-full px-3 py-1 bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 dark:bg-transparent dark:border-border"
+            }
             disabled={isLoading}
           >
             {popularQuery}

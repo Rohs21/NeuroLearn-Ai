@@ -4,16 +4,18 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  // Base: glassy/translucent in light mode, keep rounded pill layout and focus styles
+  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 bg-white/10 backdrop-blur-sm border-white/20 text-black/90 dark:text-card-foreground',
   {
     variants: {
       variant: {
+        // In dark mode use the colored backgrounds; in light mode the translucent glass stays
         default:
-          'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
+          'dark:border-transparent dark:bg-primary dark:text-primary-foreground hover:dark:bg-primary/80',
         secondary:
-          'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
+          'dark:border-transparent dark:bg-secondary dark:text-secondary-foreground hover:dark:bg-secondary/80',
         destructive:
-          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
+          'dark:border-transparent dark:bg-destructive dark:text-destructive-foreground hover:dark:bg-destructive/80',
         outline: 'text-foreground',
       },
     },
