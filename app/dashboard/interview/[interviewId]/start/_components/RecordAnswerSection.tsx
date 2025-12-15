@@ -52,6 +52,7 @@ function RecordAnswerSection({
 }: RecordAnswerSectionProps): JSX.Element {
     const [userAnswer, setUserAnswer] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
+    const [answerSubmitted, setAnswerSubmitted] = useState<boolean>(false);
     
     const {
         error,
@@ -62,28 +63,39 @@ function RecordAnswerSection({
         stopSpeechToText,
         setResults
     } = useSpeechToText({
-        continuous: false,
+        continuous: true,
         useLegacyResults: false
     });
 
     useEffect(() => {
         (results as SpeechResult[] | undefined)?.forEach((result) => {
-            setUserAnswer(prevAns => prevAns + result.transcript);
+            setUserAnswer(prevAns => prevAns + ' ' + result.transcript);
         });
     }, [results]);
 
+    // Reset answer submitted state when question changes
     useEffect(() => {
-        if (!isRecording && userAnswer?.length > 10) {
-            UpdateUserAnswer();
-        }
-    }, [userAnswer]);
+        setUserAnswer('');
+        setAnswerSubmitted(false);
+        setResults([]);
+    }, [activeQuestionIndex, setResults]);
 
     const StartStopRecording = async (): Promise<void> => {
         if (isRecording) {
             stopSpeechToText();
         } else {
+            setUserAnswer('');
+            setAnswerSubmitted(false);
             startSpeechToText();
         }
+    };
+
+    const handleSubmitAnswer = async (): Promise<void> => {
+        if (userAnswer.trim().length < 10) {
+            toast('Please provide a longer answer (at least 10 characters)');
+            return;
+        }
+        await UpdateUserAnswer();
     };
 
     const UpdateUserAnswer = async (): Promise<void> => {
@@ -121,6 +133,7 @@ function RecordAnswerSection({
                 toast('User Answer recorded successfully');
                 setUserAnswer('');
                 setResults([]);
+                setAnswerSubmitted(true);
             } else {
                 throw new Error(data.error || 'Failed to record answer');
             }
@@ -152,22 +165,48 @@ function RecordAnswerSection({
                     }}
                 />
             </div>
-            <Button 
-                disabled={loading}
-                variant="outline" 
-                className="my-10"
-                onClick={StartStopRecording}
-            >
-                {isRecording ? (
-                    <h2 className='text-red-600 animate-pulse flex gap-2 items-center'>
-                        <StopCircle />Stop Recording
-                    </h2>
-                ) : (
-                    <h2 className='text-primary flex gap-2 items-center'>
-                        <Mic />Record Answer
-                    </h2>
+
+            {/* Display current answer */}
+            {userAnswer && (
+                <div className='p-4 my-4 border rounded-lg bg-gray-50 dark:bg-gray-900 w-full max-w-md'>
+                    <h3 className='text-sm font-medium text-gray-500 mb-2'>Your Answer:</h3>
+                    <p className='text-sm text-gray-700 dark:text-gray-300'>{userAnswer.trim()}</p>
+                </div>
+            )}
+
+            {/* Answer submitted indicator */}
+            {answerSubmitted && (
+                <div className='p-3 my-2 border rounded-lg bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300 w-full max-w-md text-center'>
+                    ✓ Answer submitted for this question
+                </div>
+            )}
+
+            <div className='flex gap-4 my-10'>
+                <Button 
+                    disabled={loading}
+                    variant="outline" 
+                    onClick={StartStopRecording}
+                >
+                    {isRecording ? (
+                        <span className='text-red-600 animate-pulse flex gap-2 items-center'>
+                            <StopCircle />Stop Recording
+                        </span>
+                    ) : (
+                        <span className='text-primary flex gap-2 items-center'>
+                            <Mic />Record Answer
+                        </span>
+                    )}
+                </Button>
+
+                {userAnswer.trim().length > 0 && !isRecording && (
+                    <Button 
+                        disabled={loading || answerSubmitted}
+                        onClick={handleSubmitAnswer}
+                    >
+                        {loading ? 'Submitting...' : 'Submit Answer'}
+                    </Button>
                 )}
-            </Button>
+            </div>
         </div>
     );
 }
