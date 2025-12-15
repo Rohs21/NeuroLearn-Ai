@@ -45,6 +45,7 @@ const Feedback: React.FC<FeedbackProps> = ({ params }) => {
       }
     };
     GetFeedback();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interviewId]);
 
   const handleGoHome = (): void => {

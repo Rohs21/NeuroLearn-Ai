@@ -56,7 +56,7 @@ function StartInterview({ params }: StartInterviewProps) {
             }
         };
         GetInterviewDetails();
-    }, []);
+    }, [params.interviewId]);
 
     return (
         <div>
