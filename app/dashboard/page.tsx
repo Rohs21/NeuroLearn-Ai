@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, BookOpen, Clock, TrendingUp, Star, History, Award } from 'lucide-react';
+import { GraduationCap, BookOpen, Clock, TrendingUp, Star, History, Award, Briefcase } from 'lucide-react';
+import Link from 'next/link';
 
 // ---------- Types ----------
 type Stats = {
@@ -180,6 +181,25 @@ export default function Dashboard() {
               <div className="mb-8">
                 <h2 className="text-3xl font-bold mb-2">Welcome back! 👋</h2>
                 <p className="text-muted-foreground">Continue your learning journey</p>
+              </div>
+
+              {/* Quick Action - Interview Prep */}
+              <div className="mb-8">
+                <Link href="/dashboard/AddInterview">
+                  <Card className="cursor-pointer hover:shadow-lg transition-shadow border-dashed border-2 border-primary/30 hover:border-primary">
+                    <CardContent className="p-6">
+                      <div className="flex items-center gap-4">
+                        <div className="h-14 w-14 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center">
+                          <Briefcase className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold">AI Mock Interview Prep</h3>
+                          <p className="text-sm text-muted-foreground">Practice interviews with AI-generated questions tailored to your role</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </Link>
               </div>
             </>
           )}
