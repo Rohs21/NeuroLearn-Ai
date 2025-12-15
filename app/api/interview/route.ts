@@ -1,3 +1,6 @@
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url!);
@@ -13,8 +16,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: error instanceof Error ? error.message : error });
   }
 }
-import { NextRequest, NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
 
 export async function POST(req: NextRequest) {
   try {
