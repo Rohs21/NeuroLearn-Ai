@@ -100,27 +100,27 @@ function AddNewInterview(): JSX.Element {
     }
 
     return (
-        <div>
+        <div className='px-3 sm:px-4 py-4 sm:py-6'>
             <div 
-                className='p-10 border rounded-lg bg-secondary hover:scale-105 hover:shadow-md cursor-pointer transition-all border-dashed'
+                className='p-6 sm:p-10 border rounded-lg bg-secondary hover:scale-105 hover:shadow-md cursor-pointer transition-all border-dashed'
                 onClick={() => setOpenDailog(true)}
             >
-                <h2 className='text-lg text-center'>+ Add New</h2>
+                <h2 className='text-base sm:text-lg text-center'>+ Add New</h2>
             </div>
             <Dialog open={openDailog}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-[95vw] sm:max-w-2xl mx-2 sm:mx-auto">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl">Tell us more about your job interviwing</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-xl sm:text-2xl">Tell us more about your job interviwing</DialogTitle>
+                        <DialogDescription className="text-sm sm:text-base">
                             Add details about your job position/role, job description, and years of experience.
                         </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={onSubmit}>
                         <div>
-                            <h2>Add Details about yout job position/role, Job description and years of experience</h2>
+                            <h2 className="text-sm sm:text-base">Add Details about yout job position/role, Job description and years of experience</h2>
 
-                            <div className='mt-7 my-3'>
-                                <label>Job Role/Job Position</label>
+                            <div className='mt-5 sm:mt-7 my-3'>
+                                <label className="text-sm sm:text-base">Job Role/Job Position</label>
                                 <Input 
                                     placeholder="Ex. Full Stack Developer" 
                                     required
@@ -128,15 +128,16 @@ function AddNewInterview(): JSX.Element {
                                 />
                             </div>
                             <div className=' my-3'>
-                                <label>Job Description/ Tech Stack (In Short)</label>
+                                <label className="text-sm sm:text-base">Job Description/ Tech Stack (In Short)</label>
                                 <Textarea 
                                     placeholder="Ex. React, Angular, NodeJs, MySql etc"
                                     required
+                                    className="text-sm sm:text-base"
                                     onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => setJobDesc(event.target.value)} 
                                 />
                             </div>
                             <div className=' my-3'>
-                                <label>Years of experience</label>
+                                <label className="text-sm sm:text-base">Years of experience</label>
                                 <Input 
                                     placeholder="Ex.5" 
                                     type="number" 
@@ -146,12 +147,12 @@ function AddNewInterview(): JSX.Element {
                                 />
                             </div>
                         </div>
-                        <div className='flex gap-5 justify-end'>
-                            <Button type="button" variant="ghost" onClick={() => setOpenDailog(false)}>Cancel</Button>
-                            <Button type="submit" disabled={loading}>
+                        <div className='flex flex-col sm:flex-row gap-3 sm:gap-5 justify-end mt-4'>
+                            <Button type="button" variant="ghost" onClick={() => setOpenDailog(false)} className="w-full sm:w-auto">Cancel</Button>
+                            <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                                 {loading ?
                                     <>
-                                        <LoaderCircle className='animate-spin' /> Generating from AI
+                                        <LoaderCircle className='animate-spin mr-2' /> Generating from AI
                                     </> : 'Start Interview'
                                 }
                             </Button>
