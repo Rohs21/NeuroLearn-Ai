@@ -59,8 +59,8 @@ function StartInterview({ params }: StartInterviewProps) {
     }, [params.interviewId]);
 
     return (
-        <div>
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
+        <div className='px-3 sm:px-4 py-4 sm:py-6'>
+            <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10'>
                 {/* Questions */}
                 <QuestionsSection
                     mockInterviewQuestion={mockInterviewQuestion}
@@ -76,7 +76,7 @@ function StartInterview({ params }: StartInterviewProps) {
                                     />
                                 )}
             </div>
-            <div className='flex justify-end gap-6'>
+            <div className='flex flex-col sm:flex-row justify-center sm:justify-end gap-3 sm:gap-6 mt-6 sm:mt-8 px-2'>
                 {activeQuestionIndex > 0 &&
                     <Button onClick={() => setActiveQuestionIndex(activeQuestionIndex - 1)}>Previous Question</Button>}
                 {activeQuestionIndex !== mockInterviewQuestion.length - 1 &&

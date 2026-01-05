@@ -147,20 +147,21 @@ function RecordAnswerSection({
     };
 
     return (
-        <div className='flex items-center justify-center flex-col'>
-            <div className='flex flex-col mt-20 justify-center items-center bg-black rounded-lg p-5'>
+        <div className='flex items-center justify-center flex-col px-2 sm:px-0'>
+            <div className='flex flex-col mt-10 sm:mt-20 justify-center items-center bg-black rounded-lg p-3 sm:p-5 w-full max-w-[500px]'>
                 <Image 
                     src={'/webcam.png'} 
-                    width={200} 
-                    height={200} 
+                    width={150} 
+                    height={150} 
                     alt="webcam img"
-                    className='absolute'
+                    className='absolute w-[120px] h-[120px] sm:w-[200px] sm:h-[200px]'
                 />
                 <Webcam
                     mirrored={true}
+                    className='w-full max-w-[500px]'
                     style={{
-                        height: 500,
-                        width: 500,
+                        height: 'auto',
+                        aspectRatio: '1/1',
                         zIndex: 10,
                     }}
                 />
@@ -168,9 +169,9 @@ function RecordAnswerSection({
 
             {/* Display current answer */}
             {userAnswer && (
-                <div className='p-4 my-4 border rounded-lg bg-gray-50 dark:bg-gray-900 w-full max-w-md'>
-                    <h3 className='text-sm font-medium text-gray-500 mb-2'>Your Answer:</h3>
-                    <p className='text-sm text-gray-700 dark:text-gray-300'>{userAnswer.trim()}</p>
+                <div className='p-3 sm:p-4 my-4 border rounded-lg bg-gray-50 dark:bg-gray-900 w-full max-w-md'>
+                    <h3 className='text-xs sm:text-sm font-medium text-gray-500 mb-2'>Your Answer:</h3>
+                    <p className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>{userAnswer.trim()}</p>
                 </div>
             )}
 
@@ -181,11 +182,12 @@ function RecordAnswerSection({
                 </div>
             )}
 
-            <div className='flex gap-4 my-10'>
+            <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 my-6 sm:my-10 w-full sm:w-auto px-2 sm:px-0'>
                 <Button 
                     disabled={loading}
                     variant="outline" 
                     onClick={StartStopRecording}
+                    className='w-full sm:w-auto'
                 >
                     {isRecording ? (
                         <span className='text-red-600 animate-pulse flex gap-2 items-center'>

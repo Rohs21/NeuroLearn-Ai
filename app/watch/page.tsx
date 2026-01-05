@@ -103,10 +103,10 @@ function WatchPageContent() {
       <Navbar showBackButton={true} showAuthButtons={false} />
 
       {/* Main Content */}
-      <div className="flex h-[calc(100vh-80px)] w-full">
+      <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-80px)] w-full">
         {/* Video Player Section */}
         <div className={`${playlist ? 'flex-1 min-w-0' : 'w-full'} flex flex-col`}>
-          <div className="flex-1 px-14 py-4 overflow-y-auto scrollbar-hide" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
+          <div className="flex-1 px-3 sm:px-6 lg:px-14 py-4 overflow-y-auto scrollbar-hide" style={{scrollbarWidth: 'none', msOverflowStyle: 'none'}}>
             <style jsx>{`
               .scrollbar-hide::-webkit-scrollbar {
                 display: none;
@@ -144,7 +144,7 @@ function WatchPageContent() {
 
         {/* Playlist Sidebar - Fixed width, no gaps */}
         {playlist && (
-          <div className="w-[402px] flex-shrink-0 h-full border-l bg-background">
+          <div className="w-full lg:w-[402px] flex-shrink-0 lg:h-full border-t lg:border-t-0 lg:border-l bg-background">
             <PlaylistSidebar
               playlist={playlist}
               currentVideoId={videoId}

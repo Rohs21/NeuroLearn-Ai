@@ -129,16 +129,16 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="h-5 w-5 text-primary-foreground" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="h-7 w-7 sm:h-8 sm:w-8 bg-primary rounded-lg flex items-center justify-center">
+                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
               </div>
-              <h1 className="text-xl font-bold">NeuroLearn-AI</h1>
+              <h1 className="text-base sm:text-xl font-bold">NeuroLearn-AI</h1>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
               {sessionStatus === 'authenticated' ? (
                 <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
                   Logout
@@ -154,7 +154,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <div className="max-w-6xl mx-auto">
           {/* If user is not authenticated, show a prompt instead of loading protected data */}
           {sessionStatus === 'loading' && (
@@ -178,23 +178,23 @@ export default function Dashboard() {
           {sessionStatus === 'authenticated' && (
             <>
               {/* Welcome Section */}
-              <div className="mb-8">
-                <h2 className="text-3xl font-bold mb-2">Welcome back! 👋</h2>
-                <p className="text-muted-foreground">Continue your learning journey</p>
+              <div className="mb-6 sm:mb-8">
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back! 👋</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">Continue your learning journey</p>
               </div>
 
               {/* Quick Action - Interview Prep */}
-              <div className="mb-8">
+              <div className="mb-6 sm:mb-8">
                 <Link href="/dashboard/AddInterview">
                   <Card className="cursor-pointer hover:shadow-lg transition-shadow border-dashed border-2 border-primary/30 hover:border-primary">
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center">
-                          <Briefcase className="h-7 w-7 text-indigo-600 dark:text-indigo-400" />
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="h-10 w-10 sm:h-14 sm:w-14 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Briefcase className="h-5 w-5 sm:h-7 sm:w-7 text-indigo-600 dark:text-indigo-400" />
                         </div>
-                        <div>
-                          <h3 className="text-lg font-semibold">AI Mock Interview Prep</h3>
-                          <p className="text-sm text-muted-foreground">Practice interviews with AI-generated questions tailored to your role</p>
+                        <div className="min-w-0">
+                          <h3 className="text-base sm:text-lg font-semibold">AI Mock Interview Prep</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">Practice interviews with AI-generated questions tailored to your role</p>
                         </div>
                       </div>
                     </CardContent>
@@ -205,58 +205,58 @@ export default function Dashboard() {
           )}
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                    <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Playlists</p>
-                    <p className="text-2xl font-bold">{stats.totalPlaylists}</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Total Playlists</p>
+                    <p className="text-lg sm:text-2xl font-bold">{stats.totalPlaylists}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Videos Watched</p>
-                    <p className="text-2xl font-bold">{stats.completedVideos}/{stats.totalVideos}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                    <Clock className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Watch Time</p>
-                    <p className="text-2xl font-bold">{Math.round(stats.totalWatchTime / 60)}h</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Videos Watched</p>
+                    <p className="text-lg sm:text-2xl font-bold">{stats.completedVideos}/{stats.totalVideos}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
-                    <Star className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Progress</p>
-                    <p className="text-2xl font-bold">{Math.round(completionPercentage)}%</p>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Watch Time</p>
+                    <p className="text-lg sm:text-2xl font-bold">{Math.round(stats.totalWatchTime / 60)}h</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex items-center gap-2 sm:gap-4">
+                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Star className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Progress</p>
+                    <p className="text-lg sm:text-2xl font-bold">{Math.round(completionPercentage)}%</p>
                   </div>
                 </div>
               </CardContent>
@@ -264,18 +264,18 @@ export default function Dashboard() {
           </div>
 
           {/* Progress Overview */}
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Learning Progress</CardTitle>
+          <Card className="mb-6 sm:mb-8">
+            <CardHeader className="pb-2 sm:pb-6">
+              <CardTitle className="text-base sm:text-lg">Learning Progress</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex justify-between text-sm">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="flex justify-between text-xs sm:text-sm">
                   <span>Overall Completion</span>
                   <span>{stats.completedVideos} of {stats.totalVideos} videos</span>
                 </div>
-                <Progress value={completionPercentage} className="h-3" />
-                <p className="text-sm text-muted-foreground">
+                <Progress value={completionPercentage} className="h-2 sm:h-3" />
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   Keep going! You're doing great with your learning journey.
                 </p>
               </div>
@@ -284,11 +284,11 @@ export default function Dashboard() {
 
           {/* Tabs for different sections */}
           <Tabs defaultValue="recent" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="recent">Recent Activity</TabsTrigger>
-              <TabsTrigger value="history">Search History</TabsTrigger>
-              <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
-              <TabsTrigger value="badges">Badges</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+              <TabsTrigger value="recent" className="text-xs sm:text-sm py-2">Recent</TabsTrigger>
+              <TabsTrigger value="history" className="text-xs sm:text-sm py-2">History</TabsTrigger>
+              <TabsTrigger value="bookmarks" className="text-xs sm:text-sm py-2">Bookmarks</TabsTrigger>
+              <TabsTrigger value="badges" className="text-xs sm:text-sm py-2">Badges</TabsTrigger>
             </TabsList>
             <TabsContent value="badges" className="space-y-4">
               <Card>

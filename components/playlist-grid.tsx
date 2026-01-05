@@ -26,15 +26,15 @@ export function PlaylistGrid({ playlist, onVideoPlay, onBookmarkPlaylist }: Play
 
   const router = useRouter();
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Playlist Header */}
-      <div className="bg-card border rounded-lg p-6 display-grid">
-        <div className="flex items-start justify-between mb-4">
+      <div className="bg-card border rounded-lg p-4 sm:p-6 display-grid">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-4">
           <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-2">{playlist.title}</h1>
-            <p className="text-muted-foreground mb-4">{playlist.description}</p>
+            <h1 className="text-xl sm:text-2xl font-bold mb-2">{playlist.title}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mb-4">{playlist.description}</p>
             
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <BookOpen className="h-4 w-4" />
                 <span>{playlist.totalVideos} videos</span>
@@ -46,20 +46,22 @@ export function PlaylistGrid({ playlist, onVideoPlay, onBookmarkPlaylist }: Play
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-row sm:flex-col gap-2 sm:gap-3">
             {onBookmarkPlaylist && (
               <Button 
                 variant="outline" 
                 onClick={onBookmarkPlaylist}
+                className="flex-1 sm:flex-none text-xs sm:text-sm"
               >
-                <Star className="h-4 w-4 mr-2" />
-                Bookmark Playlist
+                <Star className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden xs:inline">Bookmark</span>
               </Button>
             )}
 
             <Button 
               variant="outline" 
               onClick={() => router.push("/dashboard/AddInterview")}
+              className="flex-1 sm:flex-none text-xs sm:text-sm"
             >
               Give Interview
             </Button>
@@ -80,7 +82,7 @@ export function PlaylistGrid({ playlist, onVideoPlay, onBookmarkPlaylist }: Play
       </div>
 
       {/* Video Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
         {playlist.videos.map((video, index) => (
           <VideoCard
             key={video.id}

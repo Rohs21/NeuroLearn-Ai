@@ -57,14 +57,14 @@ export default function SignUpForm() {
   }
 
   return (
-    <Card className="w-[400px]">
-      <CardHeader>
-        <CardTitle>Sign Up</CardTitle>
+    <Card className="w-full max-w-[400px] mx-3 sm:mx-0">
+      <CardHeader className="space-y-1 px-4 sm:px-6">
+        <CardTitle className="text-xl sm:text-2xl">Sign Up</CardTitle>
         <CardDescription>
           Create a new account to get started
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <Alert variant="destructive">

@@ -44,9 +44,9 @@ export function PlaylistSidebar({ playlist, currentVideoId, onVideoSelect }: Pla
   const currentVideoIndex = playlist.videos.findIndex(video => video.id === currentVideoId);
 
   return (
-    <div className="w-80 bg-card border rounded-lg shadow-sm">
+    <div className="w-full lg:w-80 bg-card border rounded-lg shadow-sm">
       {/* Playlist Header - YouTube Style */}
-  <div className="p-4 border-b">
+  <div className="p-3 sm:p-4 border-b">
         <div className="flex items-center justify-between mb-2">
           <h3 className="font-semibold text-sm text-foreground truncate flex-1">{playlist.title}</h3>
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -72,7 +72,7 @@ export function PlaylistSidebar({ playlist, currentVideoId, onVideoSelect }: Pla
       </div>
 
       {/* Video List - Scrollable */}
-      <div className="max-h-96 overflow-y-auto">
+      <div className="max-h-64 lg:max-h-96 overflow-y-auto">
         {playlist.videos.map((video, index) => {
           const isCurrentVideo = currentVideoId === video.id;
           

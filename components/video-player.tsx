@@ -127,7 +127,7 @@ export function VideoPlayer({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Video Player */}
       <div className="bg-card border rounded-lg overflow-hidden">
         <CardContent className="p-0">
@@ -141,11 +141,11 @@ export function VideoPlayer({
             />
           </div>
           
-          <div className="p-6">
-            <div className="flex items-start justify-between gap-4 mb-4">
+          <div className="p-3 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
               <div className="flex-1">
-                <h1 className="text-xl font-bold mb-2">{title}</h1>
-                <p className="text-muted-foreground mb-2">{channelTitle}</p>
+                <h1 className="text-lg sm:text-xl font-bold mb-2">{title}</h1>
+                <p className="text-sm sm:text-base text-muted-foreground mb-2">{channelTitle}</p>
                 <Badge className={`${getDifficultyColor(difficulty)} text-white text-xs`}>
                   <BookOpen className="h-3 w-3 mr-1" />
                   {difficulty}
@@ -154,14 +154,16 @@ export function VideoPlayer({
               
               <div className="flex gap-2">
                 {onComplete && (
-                  <Button onClick={handleComplete} variant="outline">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Complete
+                  <Button onClick={handleComplete} variant="outline" size="sm" className="flex-1 sm:flex-none">
+                    <CheckCircle2 className="h-4 w-4 mr-1 sm:mr-2" />
+                    <span className="hidden sm:inline">Complete</span>
+                    <span className="sm:hidden">Done</span>
                   </Button>
                 )}
                 {onNext && (
-                  <Button onClick={onNext}>
-                    Next Video
+                  <Button onClick={onNext} size="sm" className="flex-1 sm:flex-none">
+                    <span className="hidden sm:inline">Next Video</span>
+                    <span className="sm:hidden">Next</span>
                   </Button>
                 )}
               </div>
@@ -172,30 +174,33 @@ export function VideoPlayer({
 
       {/* Tabs for additional content */}
       <Tabs defaultValue="summary" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="summary">
-            <Brain className="h-4 w-4 mr-2" />
-            AI Summary
+        <TabsList className="grid w-full grid-cols-3 h-auto">
+          <TabsTrigger value="summary" className="text-xs sm:text-sm py-2 px-1 sm:px-4">
+            <Brain className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">AI Summary</span>
+            <span className="sm:hidden">Summary</span>
           </TabsTrigger>
-          <TabsTrigger value="quiz">
-            <CheckCircle2 className="h-4 w-4 mr-2" />
-            Knowledge Check
+          <TabsTrigger value="quiz" className="text-xs sm:text-sm py-2 px-1 sm:px-4">
+            <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">Knowledge Check</span>
+            <span className="sm:hidden">Quiz</span>
           </TabsTrigger>
-          <TabsTrigger value="notes">
-            <FileText className="h-4 w-4 mr-2" />
-            My Notes
+          <TabsTrigger value="notes" className="text-xs sm:text-sm py-2 px-1 sm:px-4">
+            <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">My Notes</span>
+            <span className="sm:hidden">Notes</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="summary">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5" />
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Brain className="h-4 w-4 sm:h-5 sm:w-5" />
                 AI-Generated Summary
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
               {isLoadingAI ? (
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
@@ -212,13 +217,13 @@ export function VideoPlayer({
 
         <TabsContent value="quiz">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
                 Knowledge Check
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
               {isLoadingAI ? (
                 <div className="flex items-center gap-2">
                   <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
@@ -280,18 +285,18 @@ export function VideoPlayer({
 
         <TabsContent value="notes">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
                 My Notes
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Take notes while watching the video..."
-                className="w-full h-40 p-3 border rounded-lg resize-none bg-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                className="w-full h-32 sm:h-40 p-3 border rounded-lg resize-none bg-transparent focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
               />
               <Button className="mt-3">Save Notes</Button>
             </CardContent>

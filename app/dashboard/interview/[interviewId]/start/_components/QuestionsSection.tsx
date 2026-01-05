@@ -34,8 +34,8 @@ function QuestionsSection({ mockInterviewQuestion, activeQuestionIndex }: Questi
     }
 
     return (
-        <div className='p-5 border rounded-lg my-10'>
-            <div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5'>
+        <div className='p-3 sm:p-5 border rounded-lg my-4 sm:my-10'>
+            <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-5'>
                 {mockInterviewQuestion.map((question: MockInterviewQuestion, index: number) => (
                     <h2
                         key={index}
@@ -47,20 +47,20 @@ function QuestionsSection({ mockInterviewQuestion, activeQuestionIndex }: Questi
                     </h2>
                 ))}
             </div>
-            <h2 className='my-5 text-md md:text-lg'>
+            <h2 className='my-4 sm:my-5 text-sm sm:text-md md:text-lg'>
                 {mockInterviewQuestion[activeQuestionIndex]?.question || 'No question available'}
             </h2>
             <Volume2
-                className='cursor-pointer'
+                className='cursor-pointer h-5 w-5 sm:h-6 sm:w-6'
                 onClick={handleVolumeClick}
             />
             
-            <div className='border rounded-lg p-5 bg-blue-100 mt-20'>
-                <h2 className='flex gap-2 items-center text-primary'>
-                    <Lightbulb />
+            <div className='border rounded-lg p-3 sm:p-5 bg-blue-100 mt-10 sm:mt-20'>
+                <h2 className='flex gap-2 items-center text-primary text-sm sm:text-base'>
+                    <Lightbulb className='h-4 w-4 sm:h-5 sm:w-5' />
                     <strong>Note:</strong>
                 </h2>
-                <h2 className='text-sm text-primary my-2'>{process.env.NEXT_PUBLIC_QUESTION_NOTE}</h2>
+                <h2 className='text-xs sm:text-sm text-primary my-2'>{process.env.NEXT_PUBLIC_QUESTION_NOTE}</h2>
             </div>
         </div>
     );
