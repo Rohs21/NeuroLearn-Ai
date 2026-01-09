@@ -30,43 +30,9 @@ export const authOptions: any = {
       name: "credentials",
       credentials: {
         email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" },
-        address: { label: "Wallet Address", type: "text" }
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // Handle wallet login
-        if (credentials?.address && !credentials?.email && !credentials?.password) {
-          const user = await prisma.user.findUnique({
-            where: {
-              walletAddress: credentials.address
-            }
-          })
-
-          if (!user) {
-            // Create new user with wallet address
-            const newUser = await prisma.user.create({
-              data: {
-                walletAddress: credentials.address,
-                email: `${credentials.address}@wallet.local`
-              }
-            })
-            return {
-              id: newUser.id,
-              email: newUser.email,
-              name: newUser.name,
-              image: newUser.image,
-            }
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-          }
-        }
-
-        // Handle email/password login
         if (!credentials?.email || !credentials?.password) {
           return null
         }
