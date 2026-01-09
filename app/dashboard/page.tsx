@@ -59,6 +59,7 @@ type Badge = {
 // ---------- Component ----------
 export default function Dashboard() {
   const router = useRouter();
+  // All state should be initialized empty, to be filled with dynamic data from API
   const [stats, setStats] = useState<Stats>({
     totalPlaylists: 0,
     totalVideos: 0,
@@ -74,53 +75,15 @@ export default function Dashboard() {
 
   useEffect(() => {
     // Only load protected dashboard data when the user is authenticated.
+    // Replace this with your API call to fetch dashboard data
     if (sessionStatus === 'authenticated') {
-      loadDashboardData();
+      // loadDashboardData();
     }
   }, [sessionStatus]);
 
-  const loadDashboardData = async () => {
-    // Example: fetch stats (still hardcoded)
-    setStats({
-      totalPlaylists: 12,
-      totalVideos: 145,
-      completedVideos: 89,
-      totalWatchTime: 2340, // minutes
-    });
-
-    // Fetch search history from API
-    try {
-      const response = await fetch('/api/history', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const data = await response.json();
-      if (response.ok && data.history) {
-        setSearchHistory(data.history);
-      } else {
-        setSearchHistory([]);
-      }
-    } catch (error) {
-      setSearchHistory([]);
-    }
-
-    // Fetch badges from API
-    try {
-      const response = await fetch('/api/badge/award', {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-      const data = await response.json();
-      if (response.ok && data.badges) {
-        setBadges(data.badges);
-      } else {
-        setBadges([]);
-      }
-    } catch (error) {
-      setBadges([]);
-    }
-  };
+  // const loadDashboardData = async () => {
+  //   // Fetch stats, search history, badges, etc. from your API here
+  // };
 
   const completionPercentage =
     stats.totalVideos > 0 ? (stats.completedVideos / stats.totalVideos) * 100 : 0;
@@ -132,20 +95,22 @@ export default function Dashboard() {
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Logo and App Name - replace with dynamic if needed */}
               <div className="h-7 w-7 sm:h-8 sm:w-8 bg-primary rounded-lg flex items-center justify-center">
                 <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
               </div>
-              <h1 className="text-base sm:text-xl font-bold">NeuroLearn-AI</h1>
+              <h1 className="text-base sm:text-xl font-bold">&nbsp;</h1>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
+              {/* Auth buttons - keep logic, but text can be dynamic if needed */}
               {sessionStatus === 'authenticated' ? (
                 <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
-                  Logout
+                  {/* Logout */}Logout
                 </Button>
               ) : (
                 <Button variant="ghost" size="sm" onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}>
-                  Login
+                  {/* Login */}Login
                 </Button>
               )}
               <ThemeToggle />
@@ -179,8 +144,8 @@ export default function Dashboard() {
             <>
               {/* Welcome Section */}
               <div className="mb-6 sm:mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold mb-2">Welcome back! 👋</h2>
-                <p className="text-sm sm:text-base text-muted-foreground">Continue your learning journey</p>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-2">&nbsp;</h2>
+                <p className="text-sm sm:text-base text-muted-foreground">&nbsp;</p>
               </div>
 
               {/* Quick Action - Interview Prep */}
@@ -193,8 +158,8 @@ export default function Dashboard() {
                           <Briefcase className="h-5 w-5 sm:h-7 sm:w-7 text-indigo-600 dark:text-indigo-400" />
                         </div>
                         <div className="min-w-0">
-                          <h3 className="text-base sm:text-lg font-semibold">AI Mock Interview Prep</h3>
-                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">Practice interviews with AI-generated questions tailored to your role</p>
+                          <h3 className="text-base sm:text-lg font-semibold">&nbsp;</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">&nbsp;</p>
                         </div>
                       </div>
                     </CardContent>
@@ -213,7 +178,7 @@ export default function Dashboard() {
                     <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Total Playlists</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">&nbsp;</p>
                     <p className="text-lg sm:text-2xl font-bold">{stats.totalPlaylists}</p>
                   </div>
                 </div>
@@ -227,7 +192,7 @@ export default function Dashboard() {
                     <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Videos Watched</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">&nbsp;</p>
                     <p className="text-lg sm:text-2xl font-bold">{stats.completedVideos}/{stats.totalVideos}</p>
                   </div>
                 </div>
@@ -241,7 +206,7 @@ export default function Dashboard() {
                     <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Watch Time</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">&nbsp;</p>
                     <p className="text-lg sm:text-2xl font-bold">{Math.round(stats.totalWatchTime / 60)}h</p>
                   </div>
                 </div>
@@ -255,7 +220,7 @@ export default function Dashboard() {
                     <Star className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">Progress</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground truncate">&nbsp;</p>
                     <p className="text-lg sm:text-2xl font-bold">{Math.round(completionPercentage)}%</p>
                   </div>
                 </div>
@@ -266,18 +231,16 @@ export default function Dashboard() {
           {/* Progress Overview */}
           <Card className="mb-6 sm:mb-8">
             <CardHeader className="pb-2 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg">Learning Progress</CardTitle>
+              <CardTitle className="text-base sm:text-lg">&nbsp;</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 sm:space-y-4">
                 <div className="flex justify-between text-xs sm:text-sm">
-                  <span>Overall Completion</span>
+                  <span>&nbsp;</span>
                   <span>{stats.completedVideos} of {stats.totalVideos} videos</span>
                 </div>
                 <Progress value={completionPercentage} className="h-2 sm:h-3" />
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Keep going! You're doing great with your learning journey.
-                </p>
+                <p className="text-xs sm:text-sm text-muted-foreground">&nbsp;</p>
               </div>
             </CardContent>
           </Card>
@@ -295,13 +258,13 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Award className="h-5 w-5" />
-                    Earned Badges
+                    &nbsp;
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     {badges.length === 0 ? (
-                      <p className="text-muted-foreground">No badges earned yet.</p>
+                      <p className="text-muted-foreground">&nbsp;</p>
                     ) : (
                       badges.map((badge) => (
                         <div key={badge.id} className="flex items-center gap-4 p-3 border rounded-lg">
@@ -326,11 +289,11 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Clock className="h-5 w-5" />
-                    Continue Learning
+                    &nbsp;
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Your recent playlists will appear here.</p>
+                  <p className="text-muted-foreground">&nbsp;</p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -340,32 +303,12 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <History className="h-5 w-5" />
-                    Watch History
+                    &nbsp;
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {searchHistory.map((history, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div>
-                          <p className="font-medium">{history.video?.title || "Untitled Video"}</p>
-                          <p className="text-sm text-muted-foreground">
-                            Watched {history.watchTime || 0} seconds • {history.completed ? "Completed" : "In Progress"} • {history.viewedAt ? new Date(history.viewedAt).toLocaleString() : ""}
-                          </p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            if (history.video?.youtubeId && router) {
-                              router.push(`/watch?v=${history.video.youtubeId}`);
-                            }
-                          }}
-                        >
-                          Watch Again
-                        </Button>
-                      </div>
-                    ))}
+                    {/* Watch history items go here */}
                   </div>
                 </CardContent>
               </Card>
@@ -376,11 +319,11 @@ export default function Dashboard() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Star className="h-5 w-5" />
-                    Bookmarked Content
+                    &nbsp;
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Your bookmarked playlists and videos will appear here.</p>
+                  <p className="text-muted-foreground">&nbsp;</p>
                 </CardContent>
               </Card>
             </TabsContent>
