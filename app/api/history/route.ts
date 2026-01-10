@@ -24,6 +24,7 @@ export async function GET(req: NextRequest) {
       orderBy: {
         viewedAt: "desc",
       },
+      take: 10
     })
 
     return NextResponse.json({ history })
@@ -51,6 +52,26 @@ export async function POST(req: NextRequest) {
         { error: "Video ID is required" },
         { status: 400 }
       );
+    }
+
+    // Check current history count
+    const historyCount = await prisma.history.count({
+      where: { userId: session.user.id }
+    });
+
+    // If user has 10 or more history entries, delete the oldest one
+    if (historyCount >= 10) {
+      const oldestHistory = await prisma.history.findFirst({
+        where: { userId: session.user.id },
+        orderBy: { viewedAt: 'asc' },
+        select: { id: true }
+      });
+
+      if (oldestHistory) {
+        await prisma.history.delete({
+          where: { id: oldestHistory.id }
+        });
+      }
     }
 
     // Ensure video exists

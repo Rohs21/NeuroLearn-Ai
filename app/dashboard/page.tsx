@@ -41,6 +41,19 @@ type Playlist = {
   createdAt: string;
 };
 
+type WatchHistory = {
+  id: string;
+  videoId: string;
+  video: {
+    title: string;
+    youtubeId: string;
+    thumbnail?: string;
+  };
+  watchTime?: number;
+  completed: boolean;
+  viewedAt: string;
+};
+
 type Bookmark = {
   id: string;
   title: string;
@@ -68,16 +81,20 @@ export default function Dashboard() {
   });
   const [recentPlaylists, setRecentPlaylists] = useState<Playlist[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
+  const [watchHistory, setWatchHistory] = useState<WatchHistory[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [playlistsLoading, setPlaylistsLoading] = useState(false);
   const [playlistsError, setPlaylistsError] = useState<string | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
 
   const { data: session, status: sessionStatus } = useSession();
 
   useEffect(() => {
     if (sessionStatus === 'authenticated') {
       loadPlaylistHistory();
+      loadWatchHistory();
     }
   }, [sessionStatus]);
 
@@ -105,6 +122,35 @@ export default function Dashboard() {
       setPlaylistsError('Failed to load playlists');
     } finally {
       setPlaylistsLoading(false);
+    }
+  };
+
+  const loadWatchHistory = async () => {
+    try {
+      setHistoryLoading(true);
+      setHistoryError(null);
+      
+      const response = await fetch('/api/history');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch watch history');
+      }
+
+      const data = await response.json();
+      setWatchHistory(data.history || []);
+      
+      // Update stats based on history
+      const completedCount = (data.history || []).filter((h: WatchHistory) => h.completed).length;
+      setStats(prev => ({
+        ...prev,
+        totalVideos: (data.history || []).length,
+        completedVideos: completedCount
+      }));
+    } catch (error) {
+      console.error('Failed to load watch history:', error);
+      setHistoryError('Failed to load history');
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -289,12 +335,65 @@ export default function Dashboard() {
 
               {/* History Tab */}
               <TabsContent value="history" className="space-y-4">
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <History className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                    <p className="text-muted-foreground">Your watch history will appear here</p>
-                  </CardContent>
-                </Card>
+                {historyLoading ? (
+                  <Card>
+                    <CardContent className="p-12 flex items-center justify-center">
+                      <p className="text-muted-foreground">Loading watch history...</p>
+                    </CardContent>
+                  </Card>
+                ) : historyError ? (
+                  <Card className="border-destructive/50">
+                    <CardContent className="p-6">
+                      <p className="text-destructive font-medium">{historyError}</p>
+                    </CardContent>
+                  </Card>
+                ) : watchHistory.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-12 text-center">
+                      <History className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p className="text-muted-foreground">No watch history yet</p>
+                      <p className="text-sm text-muted-foreground mt-1">Start watching videos to build your history</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {watchHistory.map((item) => (
+                      <Link key={item.id} href={`/watch?v=${item.video.youtubeId}`}>
+                        <Card className="cursor-pointer border-0 shadow-sm hover:shadow-md transition-shadow">
+                          <CardContent className="p-5">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="font-semibold text-lg truncate text-foreground">{item.video.title}</h3>
+                                  {item.completed && (
+                                    <span className="flex-shrink-0 px-2 py-1 rounded bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-medium">
+                                      ✓ Completed
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-6 mt-3 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {new Date(item.viewedAt).toLocaleDateString()}
+                                  </span>
+                                  {item.watchTime && (
+                                    <span className="flex items-center gap-1">
+                                      <Play className="h-3 w-3" />
+                                      {item.watchTime} sec
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex-shrink-0">
+                                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-50" />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
