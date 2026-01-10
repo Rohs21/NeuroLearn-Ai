@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, BookOpen, Clock, TrendingUp, Star, History, Award, Briefcase } from 'lucide-react';
+import { GraduationCap, BookOpen, Clock, TrendingUp, History, ArrowRight, Play } from 'lucide-react';
 import Link from 'next/link';
 
 // ---------- Types ----------
@@ -70,16 +70,43 @@ export default function Dashboard() {
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
+  const [playlistsLoading, setPlaylistsLoading] = useState(false);
+  const [playlistsError, setPlaylistsError] = useState<string | null>(null);
 
   const { data: session, status: sessionStatus } = useSession();
 
   useEffect(() => {
-    // Only load protected dashboard data when the user is authenticated.
-    // Replace this with your API call to fetch dashboard data
     if (sessionStatus === 'authenticated') {
-      // loadDashboardData();
+      loadPlaylistHistory();
     }
   }, [sessionStatus]);
+
+  const loadPlaylistHistory = async () => {
+    try {
+      setPlaylistsLoading(true);
+      setPlaylistsError(null);
+      
+      const response = await fetch('/api/user/playlists');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch playlists');
+      }
+
+      const playlists = await response.json();
+      setRecentPlaylists(playlists);
+      
+      // Update stats based on playlist count
+      setStats(prev => ({
+        ...prev,
+        totalPlaylists: playlists.length
+      }));
+    } catch (error) {
+      console.error('Failed to load playlist history:', error);
+      setPlaylistsError('Failed to load playlists');
+    } finally {
+      setPlaylistsLoading(false);
+    }
+  };
 
   // const loadDashboardData = async () => {
   //   // Fetch stats, search history, badges, etc. from your API here
@@ -91,26 +118,24 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
+      <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Logo and App Name - replace with dynamic if needed */}
-              <div className="h-7 w-7 sm:h-8 sm:w-8 bg-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
+            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+                <GraduationCap className="h-5 w-5 text-primary-foreground" />
               </div>
-              <h1 className="text-base sm:text-xl font-bold">&nbsp;</h1>
-            </div>
+              <h1 className="text-xl font-bold">NeuroLearn</h1>
+            </Link>
 
-            <div className="flex items-center gap-2 sm:gap-4">
-              {/* Auth buttons - keep logic, but text can be dynamic if needed */}
+            <div className="flex items-center gap-4">
               {sessionStatus === 'authenticated' ? (
                 <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
-                  {/* Logout */}Logout
+                  Logout
                 </Button>
               ) : (
                 <Button variant="ghost" size="sm" onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}>
-                  {/* Login */}Login
+                  Login
                 </Button>
               )}
               <ThemeToggle />
@@ -119,216 +144,161 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <div className="max-w-6xl mx-auto">
-          {/* If user is not authenticated, show a prompt instead of loading protected data */}
-          {sessionStatus === 'loading' && (
-            <div className="mb-8">
-              <p className="text-muted-foreground">Checking authentication...</p>
-            </div>
-          )}
+      <main className="container mx-auto px-4 py-8">
+        {sessionStatus === 'loading' && (
+          <div className="flex items-center justify-center min-h-screen">
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        )}
 
-          {sessionStatus === 'unauthenticated' && (
-            <div className="mb-8">
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-2xl font-bold mb-2">Please sign in</h2>
-                  <p className="text-muted-foreground mb-4">You need to sign in to view your dashboard.</p>
-                  <Button onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}>Sign in</Button>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {sessionStatus === 'authenticated' && (
-            <>
-              {/* Welcome Section */}
-              <div className="mb-6 sm:mb-8">
-                <h2 className="text-2xl sm:text-3xl font-bold mb-2">&nbsp;</h2>
-                <p className="text-sm sm:text-base text-muted-foreground">&nbsp;</p>
-              </div>
-
-              {/* Quick Action - Interview Prep */}
-              <div className="mb-6 sm:mb-8">
-                <Link href="/dashboard/AddInterview">
-                  <Card className="cursor-pointer hover:shadow-lg transition-shadow border-dashed border-2 border-primary/30 hover:border-primary">
-                    <CardContent className="p-4 sm:p-6">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="h-10 w-10 sm:h-14 sm:w-14 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Briefcase className="h-5 w-5 sm:h-7 sm:w-7 text-indigo-600 dark:text-indigo-400" />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-base sm:text-lg font-semibold">&nbsp;</h3>
-                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">&nbsp;</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </div>
-            </>
-          )}
-
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+        {sessionStatus === 'unauthenticated' && (
+          <div className="max-w-md mx-auto">
             <Card>
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">&nbsp;</p>
-                    <p className="text-lg sm:text-2xl font-bold">{stats.totalPlaylists}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">&nbsp;</p>
-                    <p className="text-lg sm:text-2xl font-bold">{stats.completedVideos}/{stats.totalVideos}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">&nbsp;</p>
-                    <p className="text-lg sm:text-2xl font-bold">{Math.round(stats.totalWatchTime / 60)}h</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-3 sm:p-6">
-                <div className="flex items-center gap-2 sm:gap-4">
-                  <div className="h-10 w-10 sm:h-12 sm:w-12 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Star className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600 dark:text-orange-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs sm:text-sm text-muted-foreground truncate">&nbsp;</p>
-                    <p className="text-lg sm:text-2xl font-bold">{Math.round(completionPercentage)}%</p>
-                  </div>
-                </div>
+              <CardContent className="p-6">
+                <h2 className="text-2xl font-bold mb-2">Welcome</h2>
+                <p className="text-muted-foreground mb-4">Sign in to view your learning dashboard.</p>
+                <Button onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })} className="w-full">Sign in</Button>
               </CardContent>
             </Card>
           </div>
+        )}
 
-          {/* Progress Overview */}
-          <Card className="mb-6 sm:mb-8">
-            <CardHeader className="pb-2 sm:pb-6">
-              <CardTitle className="text-base sm:text-lg">&nbsp;</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3 sm:space-y-4">
-                <div className="flex justify-between text-xs sm:text-sm">
-                  <span>&nbsp;</span>
-                  <span>{stats.completedVideos} of {stats.totalVideos} videos</span>
-                </div>
-                <Progress value={completionPercentage} className="h-2 sm:h-3" />
-                <p className="text-xs sm:text-sm text-muted-foreground">&nbsp;</p>
-              </div>
-            </CardContent>
-          </Card>
+        {sessionStatus === 'authenticated' && (
+          <div className="max-w-6xl mx-auto">
+            {/* Welcome Section */}
+            <div className="mb-8">
+              <h2 className="text-3xl font-bold mb-2">Welcome back, {session?.user?.name || 'Learner'}!</h2>
+              <p className="text-muted-foreground">Continue your learning journey</p>
+            </div>
 
-          {/* Tabs for different sections */}
-          <Tabs defaultValue="recent" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
-              <TabsTrigger value="recent" className="text-xs sm:text-sm py-2">Recent</TabsTrigger>
-              <TabsTrigger value="history" className="text-xs sm:text-sm py-2">History</TabsTrigger>
-              <TabsTrigger value="bookmarks" className="text-xs sm:text-sm py-2">Bookmarks</TabsTrigger>
-              <TabsTrigger value="badges" className="text-xs sm:text-sm py-2">Badges</TabsTrigger>
-            </TabsList>
-            <TabsContent value="badges" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5" />
-                    &nbsp;
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {badges.length === 0 ? (
-                      <p className="text-muted-foreground">&nbsp;</p>
-                    ) : (
-                      badges.map((badge) => (
-                        <div key={badge.id} className="flex items-center gap-4 p-3 border rounded-lg">
-                          {badge.imageUrl && (
-                            <img src={badge.imageUrl} alt={badge.title} className="h-10 w-10 rounded-full object-cover" />
-                          )}
-                          <div>
-                            <p className="font-medium">{badge.title}</p>
-                            <p className="text-sm text-muted-foreground">{badge.description}</p>
-                            <p className="text-xs text-muted-foreground">Awarded: {new Date(badge.awardedAt).toLocaleString()}</p>
-                          </div>
-                        </div>
-                      ))
-                    )}
+            {/* Stats Grid - LeetCode Style */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+              <Card className="border-0 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium">Playlists Created</p>
+                      <p className="text-3xl font-bold mt-2">{stats.totalPlaylists}</p>
+                    </div>
+                    <BookOpen className="h-12 w-12 opacity-20" />
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
 
-            <TabsContent value="recent" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    &nbsp;
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">&nbsp;</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="history" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <History className="h-5 w-5" />
-                    &nbsp;
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {/* Watch history items go here */}
+              <Card className="border-0 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium">Videos Completed</p>
+                      <p className="text-3xl font-bold mt-2">{stats.completedVideos}</p>
+                      <p className="text-xs text-muted-foreground mt-1">of {stats.totalVideos}</p>
+                    </div>
+                    <Play className="h-12 w-12 opacity-20" />
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
 
-            <TabsContent value="bookmarks" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Star className="h-5 w-5" />
-                    &nbsp;
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">&nbsp;</p>
+              <Card className="border-0 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium">Watch Time</p>
+                      <p className="text-3xl font-bold mt-2">{Math.round(stats.totalWatchTime / 60)}h</p>
+                    </div>
+                    <Clock className="h-12 w-12 opacity-20" />
+                  </div>
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+
+              <Card className="border-0 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground font-medium">Completion Rate</p>
+                      <p className="text-3xl font-bold mt-2">{Math.round(completionPercentage)}%</p>
+                    </div>
+                    <TrendingUp className="h-12 w-12 opacity-20" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Content Tabs */}
+            <Tabs defaultValue="playlists" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger value="playlists" className="text-base">Your Playlists</TabsTrigger>
+                <TabsTrigger value="history" className="text-base">History</TabsTrigger>
+              </TabsList>
+
+              {/* Playlists Tab */}
+              <TabsContent value="playlists" className="space-y-4">
+                {playlistsLoading ? (
+                  <Card>
+                    <CardContent className="p-12 flex items-center justify-center">
+                      <p className="text-muted-foreground">Loading playlists...</p>
+                    </CardContent>
+                  </Card>
+                ) : playlistsError ? (
+                  <Card className="border-destructive/50">
+                    <CardContent className="p-6">
+                      <p className="text-destructive font-medium">{playlistsError}</p>
+                    </CardContent>
+                  </Card>
+                ) : recentPlaylists.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-12 text-center">
+                      <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                      <p className="text-muted-foreground">No playlists yet</p>
+                      <p className="text-sm text-muted-foreground mt-1">Create one by searching for a topic on the home page</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-3">
+                    {recentPlaylists.map((playlist) => (
+                      <Link key={playlist.id} href={`/playlist/${playlist.id}`}>
+                        <Card className="cursor-pointer border-0 shadow-sm hover:shadow-md transition-shadow">
+                          <CardContent className="p-5">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-lg truncate text-foreground">{playlist.title}</h3>
+                                {playlist.description && (
+                                  <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{playlist.description}</p>
+                                )}
+                                <div className="flex items-center gap-6 mt-3 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1">
+                                    <Play className="h-3 w-3" />
+                                    {Array.isArray(playlist.videos) ? playlist.videos.length : 0} videos
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {new Date(playlist.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex-shrink-0">
+                                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-50" />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+
+              {/* History Tab */}
+              <TabsContent value="history" className="space-y-4">
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <History className="h-12 w-12 mx-auto mb-4 opacity-30" />
+                    <p className="text-muted-foreground">Your watch history will appear here</p>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </div>
+        )}
       </main>
     </div>
   );

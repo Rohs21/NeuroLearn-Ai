@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { PlaylistGrid } from '@/components/playlist-grid';
 import { useRouter } from 'next/navigation';
 import { Loader2, GraduationCap } from 'lucide-react';
@@ -13,6 +14,7 @@ export default function PlaylistPage({ params }: { params: { id: string } }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const { status: sessionStatus } = useSession();
 
   useEffect(() => {
     async function fetchPlaylist() {
@@ -59,7 +61,7 @@ export default function PlaylistPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <Navbar showBackButton={true} showAuthButtons={true} isAuthenticated={false} />
+      <Navbar showBackButton={true} showAuthButtons={true} isAuthenticated={sessionStatus === 'authenticated'} />
 
       <main className="container mx-auto px-4 py-8">
         {/* <h1 className="text-2xl font-bold mb-4">{playlist.title}</h1>

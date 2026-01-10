@@ -21,10 +21,11 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Fetch playlists separately and order them
+    // Fetch playlists - limit to 10 most recent
     const playlists = await prisma.playlist.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: 'desc' },
+      take: 10
     });
 
     return NextResponse.json(playlists);

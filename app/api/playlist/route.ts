@@ -23,7 +23,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Create playlist
+    // Check current playlist count
+    const playlistCount = await prisma.playlist.count({
+      where: { userId: user.id }
+    });
+
+    // If user has 10 or more playlists, delete the oldest one
+    if (playlistCount >= 10) {
+      const oldestPlaylist = await prisma.playlist.findFirst({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true }
+      });
+
+      if (oldestPlaylist) {
+        await prisma.playlist.delete({
+          where: { id: oldestPlaylist.id }
+        });
+      }
+    }
+
+    // Create new playlist
     const playlist = await (prisma as any).playlist.create({
       data: {
         title,
