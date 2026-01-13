@@ -113,9 +113,11 @@ export default function Dashboard() {
       setRecentPlaylists(playlists);
       
       // Update stats based on playlist count
+      // Calculate total videos as playlists * 20 (since each playlist generates ~20 videos from YouTube API)
       setStats(prev => ({
         ...prev,
-        totalPlaylists: playlists.length
+        totalPlaylists: playlists.length,
+        totalVideos: playlists.length * 20
       }));
     } catch (error) {
       console.error('Failed to load playlist history:', error);
@@ -139,11 +141,10 @@ export default function Dashboard() {
       const data = await response.json();
       setWatchHistory(data.history || []);
       
-      // Update stats based on history
+      // Update stats based on history - only update completed count
       const completedCount = (data.history || []).filter((h: WatchHistory) => h.completed).length;
       setStats(prev => ({
         ...prev,
-        totalVideos: (data.history || []).length,
         completedVideos: completedCount
       }));
     } catch (error) {

@@ -27,7 +27,14 @@ export async function GET(req: NextRequest) {
       take: 10
     })
 
-    return NextResponse.json({ history })
+    // Get total count of all videos the user has viewed
+    const totalVideoCount = await prisma.history.count({
+      where: {
+        userId: session.user.id,
+      },
+    })
+
+    return NextResponse.json({ history, totalVideoCount })
   } catch (error) {
     console.error("Error fetching history:", error)
     return NextResponse.json(
