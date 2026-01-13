@@ -98,7 +98,7 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
               onSearch(popularQuery, language, difficulty);
             }}
             className={
-              "text-xs text-black/90 dark:text-white rounded-full px-3 py-1 bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 dark:bg-transparent dark:border-border"
+              "text-xs text-black/90 dark:text-white rounded-full px-3 py-1 bg-white/20 backdrop-blur-md border border-white/70 dark:bg-white/10 dark:border-gray-300 hover:bg-white/30 dark:hover:bg-white/20 transition-all"
             }
             disabled={isLoading}
           >
