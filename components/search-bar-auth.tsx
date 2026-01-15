@@ -1,6 +1,6 @@
 "use client";
 import { useSession } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SearchBar } from "@/components/search-bar";
 
@@ -12,7 +12,12 @@ type SearchBarAuthProps = {
 export function SearchBarAuth(props: SearchBarAuthProps) {
   const { data: session, status } = useSession();
   const [error, setError] = useState("");
+  const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const handleSearch = (query: string, language: string, difficulty: string) => {
     if (status !== "authenticated") {
@@ -23,6 +28,10 @@ export function SearchBarAuth(props: SearchBarAuthProps) {
     setError("");
     props.onSearch(query, language, difficulty);
   };
+
+  if (!isMounted) {
+    return <SearchBar {...props} onSearch={handleSearch} />;
+  }
 
   return (
     <>

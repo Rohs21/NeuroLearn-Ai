@@ -108,7 +108,9 @@ export default function Dashboard() {
       setPlaylistsLoading(true);
       setPlaylistsError(null);
       
-      const response = await fetch('/api/user/playlists');
+      const response = await fetch('/api/user/playlists', {
+        credentials: 'include'
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch playlists');
@@ -137,7 +139,9 @@ export default function Dashboard() {
       setHistoryLoading(true);
       setHistoryError(null);
       
-      const response = await fetch('/api/history');
+      const response = await fetch('/api/history', {
+        credentials: 'include'
+      });
       
       if (!response.ok) {
         throw new Error('Failed to fetch watch history');
@@ -219,7 +223,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {sessionStatus === 'authenticated' && (
+        {isMounted && sessionStatus === 'authenticated' && (
           <div className="max-w-6xl mx-auto">
             {/* Welcome Section */}
             <div className="mb-8">

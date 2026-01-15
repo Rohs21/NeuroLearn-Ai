@@ -5,8 +5,14 @@ import { SessionProvider, useSession } from 'next-auth/react'
 
 function SessionPersist({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
+  const [isMounted, setIsMounted] = useState(false)
 
   useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isMounted) return
     try {
       if (status === 'authenticated' && session) {
         // Persist a minimal, non-sensitive snapshot of the session to localStorage.
@@ -20,7 +26,7 @@ function SessionPersist({ children }: { children: React.ReactNode }) {
       // ignore localStorage failures
       console.error('[auth] localStorage error:', e)
     }
-  }, [status, session])
+  }, [status, session, isMounted])
 
   return <>{children}</>
 }
