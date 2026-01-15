@@ -72,6 +72,7 @@ type Badge = {
 // ---------- Component ----------
 export default function Dashboard() {
   const router = useRouter();
+  const [isMounted, setIsMounted] = useState(false);
   // All state should be initialized empty, to be filled with dynamic data from API
   const [stats, setStats] = useState<Stats>({
     totalPlaylists: 0,
@@ -90,6 +91,10 @@ export default function Dashboard() {
   const [historyError, setHistoryError] = useState<string | null>(null);
 
   const { data: session, status: sessionStatus } = useSession();
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   useEffect(() => {
     if (sessionStatus === 'authenticated') {

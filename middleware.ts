@@ -24,22 +24,18 @@ export default withAuth(
   {
     callbacks: {
       // Allow unauthenticated GET access to /watch so client-side localStorage-driven
-      // playback doesn't get redirected by server-side auth checks. For other
-      // protected routes, require a token as before.
+      // playback doesn't get redirected by server-side auth checks.
+      // API routes handle auth internally via getServerSession().
       authorized: ({ token, req }) => {
         try {
           const pathname = req.nextUrl.pathname || '';
           
-          // Dashboard routes are intentionally not protected by middleware;
-          // the dashboard page will handle auth client-side and show a
-          // login prompt when necessary.
-
           // Allow read-only GET requests to the watch page without a token
           if (pathname.startsWith('/watch') && req.method === 'GET') {
             return true;
           }
 
-          // For other protected routes
+          // For other protected routes, require a token
           return !!token;
         } catch (e) {
           console.error('Auth middleware error:', e);
@@ -52,9 +48,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    "/watch/:path*",
-    "/api/video/:path*",
-    "/api/history/:path*",
-    "/api/user/:path*"
+    "/watch/:path*"
   ]
 }
