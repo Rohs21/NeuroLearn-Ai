@@ -218,53 +218,53 @@ export default function Dashboard() {
               <p className="text-muted-foreground">Continue your learning journey</p>
             </div>
 
-            {/* Stats Grid - LeetCode Style */}
+            {/* Stats Grid - Enhanced Style */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <Card className="border-0 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border border-blue-200 dark:border-blue-800 shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground font-medium">Playlists Created</p>
-                      <p className="text-3xl font-bold mt-2">{stats.totalPlaylists}</p>
+                      <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">Playlists Created</p>
+                      <p className="text-4xl font-bold mt-2 text-blue-900 dark:text-blue-100">{stats.totalPlaylists}</p>
                     </div>
-                    <BookOpen className="h-12 w-12 opacity-20" />
+                    <BookOpen className="h-12 w-12 text-blue-300 dark:text-blue-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+              <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border border-green-200 dark:border-green-800 shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground font-medium">Videos Completed</p>
-                      <p className="text-3xl font-bold mt-2">{stats.completedVideos}</p>
-                      <p className="text-xs text-muted-foreground mt-1">of {stats.totalVideos}</p>
+                      <p className="text-sm font-semibold text-green-700 dark:text-green-300">Videos Completed</p>
+                      <p className="text-4xl font-bold mt-2 text-green-900 dark:text-green-100">{stats.completedVideos}</p>
+                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">of {stats.totalVideos}</p>
                     </div>
-                    <Play className="h-12 w-12 opacity-20" />
+                    <Play className="h-12 w-12 text-green-300 dark:text-green-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
+              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border border-purple-200 dark:border-purple-800 shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground font-medium">Watch Time</p>
-                      <p className="text-3xl font-bold mt-2">{Math.round(stats.totalWatchTime / 60)}h</p>
+                      <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">Watch Time</p>
+                      <p className="text-4xl font-bold mt-2 text-purple-900 dark:text-purple-100">{Math.round(stats.totalWatchTime / 60)}h</p>
                     </div>
-                    <Clock className="h-12 w-12 opacity-20" />
+                    <Clock className="h-12 w-12 text-purple-300 dark:text-purple-600" />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
+              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border border-orange-200 dark:border-orange-800 shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground font-medium">Completion Rate</p>
-                      <p className="text-3xl font-bold mt-2">{Math.round(completionPercentage)}%</p>
+                      <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">Completion Rate</p>
+                      <p className="text-4xl font-bold mt-2 text-orange-900 dark:text-orange-100">{Math.round(completionPercentage)}%</p>
                     </div>
-                    <TrendingUp className="h-12 w-12 opacity-20" />
+                    <TrendingUp className="h-12 w-12 text-orange-300 dark:text-orange-600" />
                   </div>
                 </CardContent>
               </Card>
@@ -300,30 +300,30 @@ export default function Dashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {recentPlaylists.map((playlist) => (
                       <Link key={playlist.id} href={`/playlist/${playlist.id}`}>
-                        <Card className="cursor-pointer border-0 shadow-sm hover:shadow-md transition-shadow">
-                          <CardContent className="p-5">
-                            <div className="flex items-start justify-between gap-4">
+                        <Card className="cursor-pointer border border-border shadow-sm hover:shadow-lg hover:border-primary transition-all duration-300 h-full">
+                          <CardContent className="p-6">
+                            <div className="flex flex-col gap-4">
                               <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-lg truncate text-foreground">{playlist.title}</h3>
+                                <h3 className="font-bold text-base truncate text-foreground hover:text-primary transition-colors">{playlist.title}</h3>
                                 {playlist.description && (
-                                  <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{playlist.description}</p>
+                                  <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{playlist.description}</p>
                                 )}
-                                <div className="flex items-center gap-6 mt-3 text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1">
+                              </div>
+                              <div className="flex items-center justify-between pt-4 border-t">
+                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
                                     <Play className="h-3 w-3" />
-                                    {Array.isArray(playlist.videos) ? playlist.videos.length : 0} videos
+                                    {Array.isArray(playlist.videos) ? playlist.videos.length : 0}
                                   </span>
-                                  <span className="flex items-center gap-1">
+                                  <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                                     <Clock className="h-3 w-3" />
                                     {new Date(playlist.createdAt).toLocaleDateString()}
                                   </span>
                                 </div>
-                              </div>
-                              <div className="flex-shrink-0">
-                                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-50" />
+                                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                               </div>
                             </div>
                           </CardContent>
@@ -360,25 +360,25 @@ export default function Dashboard() {
                   <div className="space-y-3">
                     {watchHistory.map((item) => (
                       <Link key={item.id} href={`/watch?v=${item.video.youtubeId}`}>
-                        <Card className="cursor-pointer border-0 shadow-sm hover:shadow-md transition-shadow">
+                        <Card className="cursor-pointer border border-border shadow-sm hover:shadow-lg hover:border-primary transition-all duration-300">
                           <CardContent className="p-5">
                             <div className="flex items-start justify-between gap-4">
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-semibold text-lg truncate text-foreground">{item.video.title}</h3>
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <h3 className="font-semibold text-base truncate text-foreground hover:text-primary transition-colors">{item.video.title}</h3>
                                   {item.completed && (
-                                    <span className="flex-shrink-0 px-2 py-1 rounded bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-medium">
+                                    <span className="flex-shrink-0 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold border border-green-300 dark:border-green-700">
                                       ✓ Completed
                                     </span>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-6 mt-3 text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1">
+                                  <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
                                     <Clock className="h-3 w-3" />
                                     {new Date(item.viewedAt).toLocaleDateString()}
                                   </span>
                                   {item.watchTime && (
-                                    <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
                                       <Play className="h-3 w-3" />
                                       {item.watchTime} sec
                                     </span>
@@ -386,7 +386,7 @@ export default function Dashboard() {
                                 </div>
                               </div>
                               <div className="flex-shrink-0">
-                                <ArrowRight className="h-5 w-5 text-muted-foreground opacity-50" />
+                                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                               </div>
                             </div>
                           </CardContent>
