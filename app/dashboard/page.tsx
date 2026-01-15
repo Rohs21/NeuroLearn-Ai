@@ -181,14 +181,18 @@ export default function Dashboard() {
             </Link>
 
             <div className="flex items-center gap-4">
-              {sessionStatus === 'authenticated' ? (
-                <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
-                  Logout
-                </Button>
-              ) : (
-                <Button variant="ghost" size="sm" onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}>
-                  Login
-                </Button>
+              {isMounted && (
+                <>
+                  {sessionStatus === 'authenticated' ? (
+                    <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
+                      Logout
+                    </Button>
+                  ) : (
+                    <Button variant="ghost" size="sm" onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}>
+                      Login
+                    </Button>
+                  )}
+                </>
               )}
               <ThemeToggle />
             </div>
