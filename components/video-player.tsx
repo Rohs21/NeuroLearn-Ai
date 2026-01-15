@@ -53,6 +53,7 @@ export function VideoPlayer({
       const response = await fetch('/api/video/summary', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ title, description }),
       });
 
@@ -80,6 +81,7 @@ export function VideoPlayer({
       const historyResponse = await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           videoId,
           watchTime: 0, // You can pass actual watch time if tracked
@@ -93,6 +95,7 @@ export function VideoPlayer({
           await fetch('/api/badge/award', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               userId: session.user.id, // Use actual user ID from session
               moduleId: 'blockchain-basics',

@@ -117,6 +117,7 @@ function RecordAnswerSection({
             const resp = await fetch('/api/interview', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
                 body: JSON.stringify({
                     mockIdRef: interviewData?.mockId,
                     question: mockInterviewQuestion[activeQuestionIndex]?.question,

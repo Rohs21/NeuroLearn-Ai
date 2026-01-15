@@ -11,8 +11,11 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions) as Session & { user: { id: string } }
     
     if (!session?.user?.id) {
+      console.log('[API][history] No session found. Session:', session);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    console.log('[API][history] Session found for user:', session.user.id);
 
   const history = await prisma.history.findMany({
       where: {
@@ -49,8 +52,11 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions) as Session & { user: { id: string } }
     
     if (!session?.user?.id) {
+      console.log('[API][history-post] No session found');
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    console.log('[API][history-post] Session found for user:', session.user.id);
 
     const { videoId, watchTime, completed, title, description, thumbnailUrl, duration } = await req.json();
 

@@ -27,6 +27,7 @@ export default function HomePage() {
       const response = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ query, language, difficulty }),
       });
 
@@ -42,6 +43,7 @@ export default function HomePage() {
           const saveResponse = await fetch('/api/playlist', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({
               title: `Learning Path: ${query}`,
               description: `AI-curated learning path for ${query} (${language}, ${difficulty})`,

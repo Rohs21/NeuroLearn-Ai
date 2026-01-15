@@ -1,14 +1,16 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import type { Session } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   try {
+    // In App Router Route Handlers, pass the request to getServerSession
     const session = (await getServerSession(authOptions)) as Session | null;
 
     if (!session?.user?.email) {
+      console.log('[API] No session found for playlists request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

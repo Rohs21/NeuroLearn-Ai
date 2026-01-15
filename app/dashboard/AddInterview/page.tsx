@@ -72,6 +72,7 @@ function AddNewInterview(): JSX.Element {
                 const resp = await fetch('/api/interview', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
                     body: JSON.stringify({
                         mockId: mockId,
                         jsonMockResp: MockJsonResp,
