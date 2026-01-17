@@ -20,6 +20,8 @@ if (!_nextAuthUrl || !_nextAuthSecretSet) {
 }
 
 export const authOptions: any = {
+  trustHost: true,
+  useSecureCookies: process.env.NODE_ENV === 'production',
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
@@ -93,7 +95,7 @@ export const authOptions: any = {
           // Avoid exposing token contents; only ensure id is present.
           session.user.id = token.id as string
         }
-        console.log('[NextAuth][session] session created, userId=', session.user?.id ?? 'none')
+        console.log('[NextAuth][session] session created, userId=', session.user?.id ?? 'none', 'token=', token.id ?? 'no-id')
       } catch (e) {
         console.warn('[NextAuth][session] error populating session', e)
       }
