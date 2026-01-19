@@ -33,11 +33,29 @@ function StartInterview({ params }: StartInterviewProps) {
     useEffect(() => {
         const GetInterviewDetails = async () => {
             try {
+                console.log("Fetching interview details for:", params.interviewId);
                 const resp = await fetch(`/api/interview?mockId=${params.interviewId}`);
                 const data = await resp.json();
+                console.log("Interview data received:", data);
+                
                 if (data.success && data.result) {
-                    const jsonMockResp = JSON.parse(data.result.jsonMockResp);
+                    console.log("Interview found, parsing questions...");
+                    console.log("jsonMockResp:", data.result.jsonMockResp);
+                    
+                    let jsonMockResp = data.result.jsonMockResp;
+                    
+                    // If it's a string, parse it
+                    if (typeof jsonMockResp === 'string') {
+                        // Clean up any remaining markdown code blocks
+                        jsonMockResp = jsonMockResp
+                            .replace(/```json\n?/gi, "")
+                            .replace(/```\n?/gi, "")
+                            .trim();
+                        jsonMockResp = JSON.parse(jsonMockResp);
+                    }
+                    
                     if (Array.isArray(jsonMockResp)) {
+                        console.log(`Successfully parsed ${jsonMockResp.length} questions`);
                         setMockInterviewQuestion(jsonMockResp);
                     } else {
                         console.error("jsonMockResp is not an array:", jsonMockResp);
@@ -60,6 +78,12 @@ function StartInterview({ params }: StartInterviewProps) {
 
     return (
         <div className='px-3 sm:px-4 py-4 sm:py-6'>
+            {mockInterviewQuestion.length === 0 ? (
+                <div className="text-center py-12">
+                    <p className="text-red-500 font-semibold mb-2">No interview questions found</p>
+                    <p className="text-muted-foreground text-sm">Please go back and create a new interview</p>
+                </div>
+            ) : (
             <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10'>
                 {/* Questions */}
                 <QuestionsSection
@@ -76,6 +100,7 @@ function StartInterview({ params }: StartInterviewProps) {
                                     />
                                 )}
             </div>
+            )}
             <div className='flex flex-col sm:flex-row justify-center sm:justify-end gap-3 sm:gap-6 mt-6 sm:mt-8 px-2'>
                 {activeQuestionIndex > 0 &&
                     <Button onClick={() => setActiveQuestionIndex(activeQuestionIndex - 1)}>Previous Question</Button>}

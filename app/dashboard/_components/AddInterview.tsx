@@ -16,6 +16,7 @@ import { LoaderCircle, Plus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface AddInterviewProps {
   onSuccess?: () => void;
@@ -35,82 +36,148 @@ export function AddInterview({ onSuccess, variant = 'button' }: AddInterviewProp
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     setLoading(true);
     e.preventDefault();
-    console.log(jobPosition, jobDesc, jobExperience);
-
-    const InputPrompt: string =
-      "Job position: " +
-      jobPosition +
-      ", Job Description: " +
-      jobDesc +
-      ", Years of Experience : " +
-      jobExperience +
-      " , Depends on Job Position, Job Description & Years of Experience give us " +
-      process.env.NEXT_PUBLIC_INTERVIEW_QUESTION_COUNT +
-      " Interview question along with Answer in JSON format, Give us question and answer field on JSON";
-
-    let result: any;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        result = await chatSession.sendMessage(InputPrompt);
-        break;
-      } catch (error: any) {
-        if (error.message.includes("503") && attempt < 2) {
-          await new Promise((resolve) => setTimeout(resolve, 2000 * (attempt + 1)));
-          continue;
-        } else {
-          throw error;
-        }
-      }
-    }
-
-    let MockJsonResp: string = result.response.text();
-    MockJsonResp = MockJsonResp.replace(/```json|```/gi, "").trim();
+    
     try {
-      console.log(JSON.parse(MockJsonResp));
-    } catch (e) {
-      console.error("JSON parse error:", e, MockJsonResp);
-    }
-    setJsonResponse(MockJsonResp);
+      console.log("Starting interview creation with:", {
+        jobPosition,
+        jobDesc,
+        jobExperience,
+      });
 
-    if (MockJsonResp) {
-      try {
-        const mockId = uuidv4();
-        const resp = await fetch("/api/interview", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            mockId: mockId,
-            jsonMockResp: MockJsonResp,
-            jobPosition: jobPosition,
-            jobDesc: jobDesc,
-            jobExperience: jobExperience,
-            createdBy: "anonymous",
-            createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
-          }),
-        });
-        const data = await resp.json();
-        if (data.success && data.data) {
-          console.log("Inserted ID:", data.data);
-          setOpenDialog(false);
-          setJobPosition("");
-          setJobDesc("");
-          setJobExperience("");
-          setJsonResponse("");
-          if (onSuccess) {
-            onSuccess();
+      const questionCount = process.env.NEXT_PUBLIC_INTERVIEW_QUESTION_COUNT || "10";
+      const InputPrompt: string =
+        `Job position: ${jobPosition}, Job Description: ${jobDesc}, Years of Experience: ${jobExperience}. Based on this information, generate exactly ${questionCount} technical interview questions with detailed answers in JSON array format. Each object must have "question" and "answer" fields. Return ONLY the JSON array, no other text. Example format: [{"question": "What is...?", "answer": "..."}, {"question": "How do you...?", "answer": "..."}]`;
+
+      console.log("Prompt being sent to Gemini:", InputPrompt);
+
+      let result: any;
+      let lastError: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          console.log(`Attempt ${attempt + 1} to call Gemini API...`);
+          result = await chatSession.sendMessage(InputPrompt);
+          console.log("Gemini API response received successfully");
+          break;
+        } catch (error: any) {
+          lastError = error;
+          console.error(`Attempt ${attempt + 1} failed:`, error);
+          if (error.message?.includes("503") && attempt < 2) {
+            const waitTime = 2000 * (attempt + 1);
+            console.log(`Waiting ${waitTime}ms before retry...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
+            continue;
+          } else if (attempt < 2) {
+            // Retry on other errors too
+            const waitTime = 1000 * (attempt + 1);
+            console.log(`Retrying in ${waitTime}ms...`);
+            await new Promise((resolve) => setTimeout(resolve, waitTime));
+            continue;
+          } else {
+            throw error;
           }
-          router.push("/dashboard/interview/" + mockId);
-        } else {
-          throw new Error(data.error || "DB Insert Error");
         }
-      } catch (err) {
-        console.log("DB Insert Error", err);
       }
-    } else {
-      console.log("ERROR");
+
+      if (!result) {
+        throw new Error(`Failed to get response from Gemini after 3 attempts: ${lastError?.message}`);
+      }
+
+      let MockJsonResp: string = result.response.text();
+      console.log("Raw response from Gemini:", MockJsonResp);
+      
+      // More thorough cleanup
+      MockJsonResp = MockJsonResp
+        .replace(/```json\n?/gi, "")
+        .replace(/```\n?/gi, "")
+        .trim();
+      
+      console.log("After cleanup:", MockJsonResp);
+
+      try {
+        const parsed = JSON.parse(MockJsonResp);
+        console.log("Successfully parsed JSON:", parsed);
+        
+        // Validate it's an array
+        if (!Array.isArray(parsed)) {
+          throw new Error("Response is not an array");
+        }
+        
+        // Validate structure
+        if (parsed.length === 0) {
+          throw new Error("Response array is empty");
+        }
+        
+        parsed.forEach((item: any, index: number) => {
+          if (!item.question) {
+            throw new Error(`Item ${index} missing 'question' field`);
+          }
+          if (!item.answer) {
+            throw new Error(`Item ${index} missing 'answer' field`);
+          }
+        });
+      } catch (e) {
+        console.error("JSON parse/validation error:", e, "Raw response:", MockJsonResp);
+        throw new Error(`Failed to parse interview questions: ${e instanceof Error ? e.message : String(e)}`);
+      }
+      setJsonResponse(MockJsonResp);
+
+      if (MockJsonResp) {
+        try {
+          const mockId = uuidv4();
+          console.log("Sending interview data to API:", { mockId, questionCount: MockJsonResp.split('"question"').length });
+          
+          const resp = await fetch("/api/interview", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              mockId: mockId,
+              jsonMockResp: MockJsonResp,
+              jobPosition: jobPosition,
+              jobDesc: jobDesc,
+              jobExperience: jobExperience,
+              createdBy: "anonymous",
+              createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
+            }),
+          });
+          const data = await resp.json();
+          console.log("API Response:", data);
+          
+          if (data.success && data.data) {
+            console.log("Interview created successfully:", data.data);
+            toast.success("Interview created! Starting interview...");
+            setOpenDialog(false);
+            setJobPosition("");
+            setJobDesc("");
+            setJobExperience("");
+            setJsonResponse("");
+            if (onSuccess) {
+              onSuccess();
+            }
+            // Small delay before redirect to ensure toast is visible
+            setTimeout(() => {
+              router.push("/dashboard/interview/" + mockId);
+            }, 500);
+          } else {
+            throw new Error(data.error || "Failed to create interview");
+          }
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : "Failed to create interview. Please try again.";
+          console.error("Error creating interview:", err);
+          toast.error(errorMsg);
+        }
+      } else {
+        const errorMsg = "Failed to generate interview questions. Please try again.";
+        console.error(errorMsg);
+        toast.error(errorMsg);
+      }
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : "An unexpected error occurred. Please try again.";
+      console.error("Unexpected error in onSubmit:", error);
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (variant === 'card') {

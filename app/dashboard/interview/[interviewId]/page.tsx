@@ -35,11 +35,17 @@ function Interview({ params }: InterviewProps): JSX.Element {
     useEffect(() => {
         const GetInterviewDetails = async (): Promise<void> => {
             try {
+                console.log("Fetching interview details for:", params.interviewId);
                 const resp = await fetch(`/api/interview?mockId=${params.interviewId}`);
                 const data = await resp.json();
+                console.log("Interview response:", data);
+                
                 if (data.success && data.result) {
+                    console.log("Interview data loaded successfully");
+                    console.log("jsonMockResp preview:", data.result.jsonMockResp?.substring(0, 100));
                     setInterviewData(data.result as InterviewData);
                 } else {
+                    console.error("Interview fetch failed:", data.error);
                     setInterviewData(null);
                 }
             } catch (error) {
