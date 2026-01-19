@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, BookOpen, Clock, TrendingUp, History, ArrowRight, Play } from 'lucide-react';
+import { GraduationCap, BookOpen, Clock, TrendingUp, History, ArrowRight, Play, Briefcase } from 'lucide-react';
 import Link from 'next/link';
+import { InterviewList } from './_components/InterviewList';
+import { AddInterview } from './_components/AddInterview';
 
 // ---------- Types ----------
 type Stats = {
@@ -17,6 +19,7 @@ type Stats = {
   totalVideos: number;
   completedVideos: number;
   totalWatchTime: number;
+  totalInterviews?: number;
 };
 
 type SearchHistoryItem = {
@@ -73,12 +76,14 @@ type Badge = {
 export default function Dashboard() {
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
+  const [refreshInterviews, setRefreshInterviews] = useState(false);
   // All state should be initialized empty, to be filled with dynamic data from API
   const [stats, setStats] = useState<Stats>({
     totalPlaylists: 0,
     totalVideos: 0,
     completedVideos: 0,
     totalWatchTime: 0,
+    totalInterviews: 0,
   });
   const [recentPlaylists, setRecentPlaylists] = useState<Playlist[]>([]);
   const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
@@ -100,8 +105,9 @@ export default function Dashboard() {
     if (sessionStatus === 'authenticated') {
       loadPlaylistHistory();
       loadWatchHistory();
+      loadInterviewStats();
     }
-  }, [sessionStatus]);
+  }, [sessionStatus, refreshInterviews]);
 
   const loadPlaylistHistory = async () => {
     try {
@@ -161,6 +167,28 @@ export default function Dashboard() {
       setHistoryError('Failed to load history');
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  const loadInterviewStats = async () => {
+    try {
+      const response = await fetch('/api/interview/list', {
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch interviews');
+      }
+
+      const data = await response.json();
+      if (data.success && Array.isArray(data.result)) {
+        setStats(prev => ({
+          ...prev,
+          totalInterviews: data.result.length
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load interview stats:', error);
     }
   };
 
@@ -232,7 +260,7 @@ export default function Dashboard() {
             </div>
 
             {/* Stats Grid - Enhanced Style */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
               <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border border-blue-200 dark:border-blue-800 shadow-md hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
@@ -281,12 +309,25 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border border-red-200 dark:border-red-800 shadow-md hover:shadow-lg transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-red-700 dark:text-red-300">Mock Interviews</p>
+                      <p className="text-4xl font-bold mt-2 text-red-900 dark:text-red-100">{stats.totalInterviews || 0}</p>
+                    </div>
+                    <Briefcase className="h-12 w-12 text-red-300 dark:text-red-600" />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Content Tabs */}
             <Tabs defaultValue="playlists" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
                 <TabsTrigger value="playlists" className="text-base">Your Playlists</TabsTrigger>
+                <TabsTrigger value="interviews" className="text-base">Interviews</TabsTrigger>
                 <TabsTrigger value="history" className="text-base">History</TabsTrigger>
               </TabsList>
 
@@ -345,6 +386,15 @@ export default function Dashboard() {
                     ))}
                   </div>
                 )}
+              </TabsContent>
+
+              {/* Interviews Tab */}
+              <TabsContent value="interviews" className="space-y-4">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold">Your Mock Interviews</h3>
+                  <AddInterview onSuccess={() => setRefreshInterviews(!refreshInterviews)} />
+                </div>
+                <InterviewList isLoading={false} error={null} onRefresh={() => setRefreshInterviews(!refreshInterviews)} />
               </TabsContent>
 
               {/* History Tab */}
