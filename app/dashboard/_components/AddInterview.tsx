@@ -145,6 +145,7 @@ export function AddInterview({ onSuccess, variant = 'button' }: AddInterviewProp
           
           if (data.success && data.data) {
             console.log("Interview created successfully:", data.data);
+            console.log("Redirecting to interview page with mockId:", mockId);
             toast.success("Interview created! Starting interview...");
             setOpenDialog(false);
             setJobPosition("");
@@ -155,9 +156,17 @@ export function AddInterview({ onSuccess, variant = 'button' }: AddInterviewProp
               onSuccess();
             }
             // Small delay before redirect to ensure toast is visible
+            const redirectPath = `/dashboard/interview/${mockId}`;
+            console.log("Redirect path:", redirectPath);
             setTimeout(() => {
-              router.push("/dashboard/interview/" + mockId);
-            }, 500);
+              console.log("⏳ Executing redirect to:", redirectPath);
+              try {
+                router.push(redirectPath);
+                console.log("✅ Router push executed");
+              } catch (pushError) {
+                console.error("❌ Router push failed:", pushError);
+              }
+            }, 1000);
           } else {
             throw new Error(data.error || "Failed to create interview");
           }

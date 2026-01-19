@@ -35,21 +35,21 @@ function Interview({ params }: InterviewProps): JSX.Element {
     useEffect(() => {
         const GetInterviewDetails = async (): Promise<void> => {
             try {
-                console.log("Fetching interview details for:", params.interviewId);
+                console.log("📍 Interview page loaded, fetching details for:", params.interviewId);
                 const resp = await fetch(`/api/interview?mockId=${params.interviewId}`);
                 const data = await resp.json();
-                console.log("Interview response:", data);
+                console.log("📍 Interview response received:", data);
                 
                 if (data.success && data.result) {
-                    console.log("Interview data loaded successfully");
-                    console.log("jsonMockResp preview:", data.result.jsonMockResp?.substring(0, 100));
+                    console.log("✅ Interview data loaded successfully");
+                    console.log("📍 jsonMockResp preview:", data.result.jsonMockResp?.substring(0, 100));
                     setInterviewData(data.result as InterviewData);
                 } else {
-                    console.error("Interview fetch failed:", data.error);
+                    console.error("❌ Interview fetch failed:", data.error);
                     setInterviewData(null);
                 }
             } catch (error) {
-                console.error('Error fetching interview details:', error);
+                console.error('❌ Error fetching interview details:', error);
                 setInterviewData(null);
             } finally {
                 setIsLoading(false);
@@ -81,7 +81,10 @@ function Interview({ params }: InterviewProps): JSX.Element {
     if (isLoading) {
         return (
             <div className='my-10 flex justify-center'>
-                <div className="animate-pulse">Loading interview details...</div>
+                <div className="flex flex-col items-center gap-3">
+                    <div className="animate-pulse text-lg font-medium">Loading interview details...</div>
+                    <div className="text-xs text-muted-foreground">Please wait while we prepare your interview</div>
+                </div>
             </div>
         );
     }
