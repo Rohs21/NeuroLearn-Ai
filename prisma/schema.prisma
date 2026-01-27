@@ -15,7 +15,7 @@ model MockInterview {
   jobDesc       String       @db.VarChar(255)
   jobExperience String       @db.VarChar(255)
   createdBy     String       @db.VarChar(255)
-  createdAt     String?      @db.VarChar(255)
+  createdAt     DateTime     @default(now())
   mockId        String       @unique @db.VarChar(255)
   userAnswers   UserAnswer[]
 
@@ -31,7 +31,7 @@ model UserAnswer {
   feedback     String?      @db.Text
   rating       String?      @db.VarChar(255)
   userEmail    String?      @db.VarChar(255)
-  createdAt    String?      @db.VarChar(255)
+  createdAt    DateTime     @default(now())
   mockInterview MockInterview @relation(fields: [mockIdRef], references: [mockId])
 
   @@map("userAnswer")
