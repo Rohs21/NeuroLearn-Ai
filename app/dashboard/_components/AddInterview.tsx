@@ -14,7 +14,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { chatSession } from '@/utils/GeminiAIModal';
 import { LoaderCircle, Plus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import moment from 'moment';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 
@@ -137,7 +136,6 @@ export function AddInterview({ onSuccess, variant = 'button' }: AddInterviewProp
               jobDesc: jobDesc,
               jobExperience: jobExperience,
               createdBy: "anonymous",
-              createdAt: moment().format("YYYY-MM-DD HH:mm:ss"),
             }),
           });
           const data = await resp.json();

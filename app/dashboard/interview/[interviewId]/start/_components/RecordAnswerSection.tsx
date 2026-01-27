@@ -7,7 +7,6 @@ import useSpeechToText from 'react-hook-speech-to-text';
 import { Mic, StopCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { chatSession } from '@/utils/GeminiAIModal'
-import moment from 'moment'
 
 // Interface for individual question structure
 interface MockInterviewQuestion {
@@ -126,7 +125,6 @@ function RecordAnswerSection({
                     feedback: JsonFeedbackResp?.feedback,
                     rating: JsonFeedbackResp?.rating,
                     userEmail: '',
-                    createdAt: moment().toISOString(),
                 })
             });
             const data = await resp.json();
