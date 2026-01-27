@@ -18,7 +18,7 @@ interface InterviewData {
     jobDesc: string;
     jobExperience: string;
     createdBy: string;
-    createdAt: string | null;
+    createdAt: string | Date | null;
 }
 
 interface StartInterviewProps {

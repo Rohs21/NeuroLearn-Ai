@@ -12,7 +12,7 @@ interface Interview {
   jobPosition: string;
   jobDesc: string;
   jobExperience: string;
-  createdAt: string;
+  createdAt: string | Date;
   createdBy: string;
   jsonMockResp?: string;
 }
