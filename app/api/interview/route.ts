@@ -30,7 +30,6 @@ export async function POST(req: NextRequest) {
           jobDesc: body.jobDesc,
           jobExperience: body.jobExperience,
           createdBy: body.createdBy,
-          createdAt: body.createdAt,
         }
       });
       return NextResponse.json({ success: true, data: resp });
@@ -44,7 +43,6 @@ export async function POST(req: NextRequest) {
       feedback,
       rating,
       userEmail,
-      createdAt
     } = body;
     const resp = await prisma.userAnswer.create({
       data: {
@@ -55,7 +53,6 @@ export async function POST(req: NextRequest) {
         feedback,
         rating,
         userEmail,
-        createdAt,
       }
     });
     return NextResponse.json({ success: true, data: resp });
