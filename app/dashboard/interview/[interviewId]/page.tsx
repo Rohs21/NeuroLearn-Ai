@@ -180,7 +180,7 @@ function Interview({ params }: InterviewProps): JSX.Element {
                 <div className='flex justify-center sm:justify-end items-end mt-6 sm:mt-10'>
                     <Button 
                         className='px-6 sm:px-8 py-2 font-medium cursor-pointer w-full sm:w-auto'
-                        disabled={!webCamEnabled || isNavigating}
+                        disabled={isNavigating}
                         onClick={handleStartInterview}
                     >
                         Start Interview
