@@ -16,6 +16,7 @@ The project aims to provide cutting-edge solutions in AI-powered learning and ca
 
 ## 📂 Project Status
 🔨 **Work in Progress**  
-This repository is actively under development. Expect frequent updates and major changes as features evolve.  
+<img width="1138" height="782" alt="image" src="https://github.com/user-attachments/assets/02bfd30c-1e44-430b-a9a6-e716e5494464" />
+
 
 ---
