@@ -29,9 +29,11 @@ function StartInterview({ params }: StartInterviewProps) {
         const [interviewData, setInterviewData] = useState<InterviewData | null>(null);
         const [mockInterviewQuestion, setMockInterviewQuestion] = useState<any[]>([]);
         const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+        const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const GetInterviewDetails = async () => {
+            setIsLoading(true);
             try {
                 console.log("Fetching interview details for:", params.interviewId);
                 const resp = await fetch(`/api/interview?mockId=${params.interviewId}`);
@@ -71,10 +73,21 @@ function StartInterview({ params }: StartInterviewProps) {
                 console.error('Error fetching interview details:', error);
                 setMockInterviewQuestion([]);
                 setInterviewData(null);
+            } finally {
+                setIsLoading(false);
             }
         };
         GetInterviewDetails();
     }, [params.interviewId]);
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                <p className="text-zinc-500 font-medium">Loading interview questions...</p>
+            </div>
+        );
+    }
 
     return (
         <div className='px-3 sm:px-4 py-4 sm:py-6'>
@@ -101,14 +114,27 @@ function StartInterview({ params }: StartInterviewProps) {
                                 )}
             </div>
             )}
-            <div className='flex flex-col sm:flex-row justify-center sm:justify-end gap-3 sm:gap-6 mt-6 sm:mt-8 px-2'>
+            <div className='flex flex-col sm:flex-row justify-center sm:justify-end gap-3 sm:gap-4 mt-6 sm:mt-10 px-2'>
                 {activeQuestionIndex > 0 &&
-                    <Button onClick={() => setActiveQuestionIndex(activeQuestionIndex - 1)}>Previous Question</Button>}
+                    <Button 
+                        variant="outline"
+                        onClick={() => setActiveQuestionIndex(activeQuestionIndex - 1)}
+                        className="font-medium border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                        Previous Question
+                    </Button>}
                 {activeQuestionIndex !== mockInterviewQuestion.length - 1 &&
-                    <Button onClick={() => setActiveQuestionIndex(activeQuestionIndex + 1)}>Next Question</Button>}
+                    <Button 
+                        onClick={() => setActiveQuestionIndex(activeQuestionIndex + 1)}
+                        className="font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90"
+                    >
+                        Next Question
+                    </Button>}
                 {activeQuestionIndex === mockInterviewQuestion.length - 1 &&
                     <Link href={`/dashboard/interview/${interviewData?.mockId}/feedback`}>
-                        <Button>End Interview</Button>
+                        <Button className="w-full sm:w-auto font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90">
+                            End Interview
+                        </Button>
                     </Link>}
             </div>
         </div>

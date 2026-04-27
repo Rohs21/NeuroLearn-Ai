@@ -66,24 +66,42 @@ function Interview({ params }: InterviewProps): JSX.Element {
         }, 100);
     };
 
-    const handleEnableCamera = (): void => {
+    const handleEnableCamera = async (): Promise<void> => {
+        try {
+            // Attempt to request both camera and microphone upfront
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+                audio: true
+            });
+            stream.getTracks().forEach(track => track.stop());
+        } catch (error: any) {
+            console.warn("Could not pre-request media devices. Proceeding to component level:", error);
+            // We do not block the user here. If they lack a device, the specific components will handle it.
+        }
+        
         setWebCamEnabled(true);
     };
 
     const handleUserMedia = (): void => {
-        setWebCamEnabled(true);
+        console.log("Webcam successfully initialized");
     };
 
-    const handleUserMediaError = (): void => {
-        setWebCamEnabled(false);
+    const handleUserMediaError = (error: string | DOMException): void => {
+        console.error("Webcam initialization failed:", error);
+        // We removed setWebCamEnabled(false) here. 
+        // If a user doesn't have a camera or blocks it, we still want to let them proceed 
+        // to the interview to answer questions using text/audio if possible.
     };
 
     if (isLoading) {
         return (
-            <div className='my-10 flex justify-center'>
-                <div className="flex flex-col items-center gap-3">
-                    <div className="animate-pulse text-lg font-medium">Loading interview details...</div>
-                    <div className="text-xs text-muted-foreground">Please wait while we prepare your interview</div>
+            <div className='my-20 flex justify-center'>
+                <div className="flex flex-col items-center gap-4 bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2rem] p-10 shadow-sm">
+                    <div className="w-8 h-8 border-2 border-zinc-200 dark:border-white/10 border-t-zinc-900 dark:border-t-white rounded-full animate-spin" />
+                    <div className="flex flex-col items-center gap-1">
+                        <div className="text-lg font-semibold text-zinc-900 dark:text-white">Loading interview details...</div>
+                        <div className="text-sm text-zinc-500 dark:text-zinc-400">Please wait while we prepare your interview</div>
+                    </div>
                 </div>
             </div>
         );
@@ -99,37 +117,36 @@ function Interview({ params }: InterviewProps): JSX.Element {
 
     return (
         <>
-            <div className='my-6 sm:my-10 max-w-6xl mx-auto px-3 sm:px-4'>
-                <h2 className='font-bold text-xl sm:text-2xl mb-6 sm:mb-8'>Let's Get Started</h2>
-                
+            <div className='my-6 sm:my-10 max-w-6xl mx-auto px-4 sm:px-6'>
+                <h2 className='font-semibold tracking-tight text-2xl sm:text-3xl mb-6 sm:mb-8 text-zinc-900 dark:text-white'>Let's Get Started</h2>
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-10'>
                     {/* Interview Details Section */}
-                    <div className='flex flex-col my-3 sm:my-5 gap-4 sm:gap-5'>
-                        <div className='flex flex-col p-4 sm:p-6 rounded-lg border border-gray-200 gap-3 sm:gap-4 bg-white shadow-sm'>
-                            <div className='space-y-3 sm:space-y-4'>
+                    <div className='flex flex-col gap-4 sm:gap-6'>
+                        <div className='flex flex-col p-6 sm:p-8 rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl shadow-sm'>
+                            <div className='space-y-4 sm:space-y-5'>
                                 <div>
-                                    <h3 className='text-xs sm:text-sm font-medium text-gray-500 mb-1'>Job Position</h3>
-                                    <p className='text-base sm:text-lg font-semibold text-gray-900'>{interviewData.jobPosition}</p>
+                                    <h3 className='text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider'>Job Position</h3>
+                                    <p className='text-base sm:text-lg font-semibold text-zinc-900 dark:text-white'>{interviewData.jobPosition}</p>
                                 </div>
                                 
                                 <div>
-                                    <h3 className='text-xs sm:text-sm font-medium text-gray-500 mb-1'>Job Description/Tech Stack</h3>
-                                    <p className='text-sm sm:text-base text-gray-700 leading-relaxed'>{interviewData.jobDesc}</p>
+                                    <h3 className='text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider'>Job Description/Tech Stack</h3>
+                                    <p className='text-sm sm:text-base text-zinc-700 dark:text-zinc-300 leading-relaxed'>{interviewData.jobDesc}</p>
                                 </div>
                                 
                                 <div>
-                                    <h3 className='text-xs sm:text-sm font-medium text-gray-500 mb-1'>Years of Experience</h3>
-                                    <p className='text-base sm:text-lg font-semibold text-gray-900'>{interviewData.jobExperience} years</p>
+                                    <h3 className='text-xs sm:text-sm font-medium text-zinc-500 dark:text-zinc-400 mb-1.5 uppercase tracking-wider'>Years of Experience</h3>
+                                    <p className='text-base sm:text-lg font-semibold text-zinc-900 dark:text-white'>{interviewData.jobExperience} years</p>
                                 </div>
                             </div>
                         </div>
                         
-                        <div className='p-4 sm:p-5 border rounded-lg border-yellow-200 bg-yellow-50'>
-                            <h2 className='flex gap-2 items-center text-yellow-700 font-semibold mb-2 sm:mb-3 text-sm sm:text-base'>
-                                <Lightbulb className='h-4 w-4 sm:h-5 sm:w-5' />
+                        <div className='p-5 sm:p-6 border rounded-2xl border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-zinc-800/30'>
+                            <h2 className='flex gap-2 items-center text-zinc-900 dark:text-white font-semibold mb-2 sm:mb-3 text-sm sm:text-base'>
+                                <Lightbulb className='h-4 w-4 sm:h-5 sm:w-5 text-zinc-500 dark:text-zinc-400' />
                                 Information
                             </h2>
-                            <p className='text-yellow-700 text-xs sm:text-sm leading-relaxed'>
+                            <p className='text-zinc-600 dark:text-zinc-400 text-xs sm:text-sm leading-relaxed'>
                                 {process.env.NEXT_PUBLIC_INFORMATION}
                             </p>
                         </div>
@@ -137,7 +154,7 @@ function Interview({ params }: InterviewProps): JSX.Element {
 
                     {/* Webcam Section */}
                     <div className='flex flex-col justify-center'>
-                        <div className='bg-white border border-gray-200 rounded-lg p-4 sm:p-6 shadow-sm'>
+                        <div className='bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2rem] p-6 sm:p-8 shadow-sm h-full flex flex-col items-center justify-center'>
                             {webCamEnabled ? (
                                 <div className='flex flex-col items-center'>
                                     <Webcam
@@ -154,17 +171,17 @@ function Interview({ params }: InterviewProps): JSX.Element {
                                     <p className='text-xs sm:text-sm text-gray-600 mt-3'>Camera is active and ready</p>
                                 </div>
                             ) : (
-                                <div className='flex flex-col items-center text-center'>
-                                    <div className='bg-gray-50 rounded-lg p-6 sm:p-8 mb-4 w-full'>
-                                        <WebcamIcon className='h-16 w-16 sm:h-20 sm:w-20 mx-auto text-gray-400 mb-4' />
-                                        <h3 className='text-base sm:text-lg font-medium text-gray-900 mb-2'>Camera Setup Required</h3>
-                                        <p className='text-sm sm:text-base text-gray-600 mb-4'>
+                                <div className='flex flex-col items-center text-center w-full'>
+                                    <div className='bg-zinc-50 dark:bg-zinc-800/30 border border-zinc-200 dark:border-white/10 rounded-2xl p-6 sm:p-8 mb-4 w-full'>
+                                        <WebcamIcon className='h-16 w-16 sm:h-20 sm:w-20 mx-auto text-zinc-400 mb-4' />
+                                        <h3 className='text-base sm:text-lg font-semibold text-zinc-900 dark:text-white mb-2'>Camera Setup Required</h3>
+                                        <p className='text-sm sm:text-base text-zinc-500 dark:text-zinc-400 mb-4'>
                                             Please enable your camera and microphone to proceed with the interview
                                         </p>
                                     </div>
                                     <Button 
                                         variant="outline" 
-                                        className="w-full font-medium"
+                                        className="w-full font-medium border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                                         onClick={handleEnableCamera}
                                         disabled={isNavigating}
                                     >
@@ -177,10 +194,10 @@ function Interview({ params }: InterviewProps): JSX.Element {
                 </div>
 
                 {/* Start Interview Button */}
-                <div className='flex justify-center sm:justify-end items-end mt-6 sm:mt-10'>
+                <div className='flex justify-center sm:justify-end items-end mt-8 sm:mt-12'>
                     <Button 
-                        className='px-6 sm:px-8 py-2 font-medium cursor-pointer w-full sm:w-auto'
-                        disabled={!webCamEnabled || isNavigating}
+                        className='px-6 sm:px-8 py-2.5 font-medium cursor-pointer w-full sm:w-auto bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 transition-opacity rounded-xl shadow-md'
+                        disabled={isNavigating}
                         onClick={handleStartInterview}
                     >
                         Start Interview

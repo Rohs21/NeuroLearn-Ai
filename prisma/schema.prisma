@@ -79,6 +79,8 @@ model User {
   histories     History[]
   badges        Badge[]
   playlists     Playlist[]
+  notes         Note[]
+  quizResults   QuizResult[]
   createdAt     DateTime  @default(now())
 }
 
@@ -130,7 +132,29 @@ model History {
   userId    String
   video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
   videoId   String
-  watchTime Int?     // seconds watched
+  watchTime Int?
   completed Boolean  @default(false)
   viewedAt  DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  userId    String
+  youtubeId String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, youtubeId])
+}
+
+model QuizResult {
+  id        String   @id @default(cuid())
+  userId    String
+  youtubeId String
+  score     Int
+  total     Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -2,11 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { YouTubeService } from '@/lib/services/youtube';
-import { GeminiService } from '@/lib/services/gemini';
-import { PrismaClient } from '@prisma/client';
+import { GroqService } from '@/lib/services/groq';
+import prisma from '@/lib/prisma';
 import { Session } from "next-auth"
-
-const prisma = new PrismaClient()
 
 export const dynamic = 'force-dynamic';
 
@@ -20,11 +18,11 @@ export async function POST(request: NextRequest) {
     }
 
     const youtubeService = new YouTubeService();
-    const geminiService = new GeminiService();
+    const groqService = new GroqService();
 
     // Generate smart queries for better results
     const smartQueries = await youtubeService.generateSmartQuery(query, language);
-    
+
     // Search videos from multiple queries and combine results
     const allVideos = [];
     for (const smartQuery of smartQueries.slice(0, 3)) { // Limit to 3 queries to avoid rate limits
@@ -34,34 +32,29 @@ export async function POST(request: NextRequest) {
 
     // Remove duplicates and limit results
     const uniqueVideos = allVideos
-      .filter((video, index, self) => 
+      .filter((video, index, self) =>
         index === self.findIndex(v => v.id === video.id)
       )
       .slice(0, 25);
 
     if (uniqueVideos.length === 0) {
-      return NextResponse.json({ 
-        playlist: null, 
-        message: 'No videos found for this query. Please try a different search term.' 
+      return NextResponse.json({
+        playlist: null,
+        message: 'No videos found for this query. Please try a different search term.'
       });
     }
 
-    // Categorize videos by difficulty using AI
-    const categorizedVideos = await Promise.all(
-      uniqueVideos.map(async (video, index) => {
-        const aiDifficulty = await geminiService.categorizeDifficulty(
-          video.title, 
-          video.description
-        );
-        
-        return {
-          ...video,
-          order: index + 1,
-          difficulty: aiDifficulty,
-          duration: youtubeService.formatDuration(video.duration),
-        };
-      })
+    // Categorize all videos in a single batched LLM call
+    const difficulties = await groqService.categorizeDifficultyBatch(
+      uniqueVideos.map(v => ({ title: v.title, description: v.description }))
     );
+
+    const categorizedVideos = uniqueVideos.map((video, index) => ({
+      ...video,
+      order: index + 1,
+      difficulty: difficulties[index] ?? 'beginner',
+      duration: youtubeService.formatDuration(video.duration),
+    }));
 
     // Sort videos by difficulty (beginner -> intermediate -> advanced)
     const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };

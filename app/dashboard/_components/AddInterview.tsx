@@ -16,21 +16,29 @@ import { LoaderCircle, Plus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 
 interface AddInterviewProps {
   onSuccess?: () => void;
-  variant?: 'button' | 'card';
+  variant?: 'button' | 'card' | 'custom';
+  customTrigger?: React.ReactNode;
+  initialData?: {
+    jobPosition?: string;
+    jobDesc?: string;
+    jobExperience?: string;
+  };
 }
 
-export function AddInterview({ onSuccess, variant = 'button' }: AddInterviewProps) {
+export function AddInterview({ onSuccess, variant = 'button', customTrigger, initialData }: AddInterviewProps) {
   const [openDialog, setOpenDialog] = useState<boolean>(false);
-  const [jobPosition, setJobPosition] = useState<string>('');
-  const [jobDesc, setJobDesc] = useState<string>('');
-  const [jobExperience, setJobExperience] = useState<string>('');
+  const [jobPosition, setJobPosition] = useState<string>(initialData?.jobPosition || '');
+  const [jobDesc, setJobDesc] = useState<string>(initialData?.jobDesc || '');
+  const [jobExperience, setJobExperience] = useState<string>(initialData?.jobExperience || '');
   const [loading, setLoading] = useState<boolean>(false);
   const [jsonResponse, setJsonResponse] = useState<string>('');
 
   const router = useRouter();
+  const { data: session } = useSession();
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     setLoading(true);
@@ -135,7 +143,7 @@ export function AddInterview({ onSuccess, variant = 'button' }: AddInterviewProp
               jobPosition: jobPosition,
               jobDesc: jobDesc,
               jobExperience: jobExperience,
-              createdBy: "anonymous",
+              createdBy: session?.user?.email || "anonymous",
             }),
           });
           const data = await resp.json();
@@ -274,13 +282,19 @@ export function AddInterview({ onSuccess, variant = 'button' }: AddInterviewProp
     );
   }
 
-  // Button variant
+  // Button or Custom variant
   return (
     <>
-      <Button onClick={() => setOpenDialog(true)} className="gap-2">
-        <Plus className="h-4 w-4" />
-        New Interview
-      </Button>
+      {variant === 'custom' && customTrigger ? (
+        <div onClick={() => setOpenDialog(true)} className="w-full">
+          {customTrigger}
+        </div>
+      ) : (
+        <Button onClick={() => setOpenDialog(true)} variant="default" className="rounded-xl shadow-md font-medium bg-primary text-primary-foreground hover:bg-primary/90 gap-2">
+          <Plus className="h-4 w-4" />
+          New Interview
+        </Button>
+      )}
 
       <Dialog open={openDialog} onOpenChange={setOpenDialog}>
         <DialogContent className="max-w-[95vw] sm:max-w-2xl mx-2 sm:mx-auto">
