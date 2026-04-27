@@ -1,16 +1,15 @@
+"use client";
+
 import SignInForm from "@/components/auth/signin-form"
-import { GraduationCap } from "lucide-react"
 import { Navbar } from "@/components/navbar"
 import Hyperspeed from "@/components/Hyperspeed"
 
 export default function SignInPage() {
   return (
-    <div className="min-h-screen flex flex-col relative z-10 bg-zinc-50 dark:bg-transparent">
-      <div className="fixed inset-0 -z-10 pointer-events-none hidden dark:block">
+    <div className="min-h-screen flex flex-col relative z-10 bg-transparent">
+      <div className="fixed inset-0 -z-10 pointer-events-none">
         <Hyperspeed
           effectOptions={{
-            onSpeedUp: () => { },
-            onSlowDown: () => { },
             distortion: 'turbulentDistortion',
             length: 400,
             roadWidth: 10,
@@ -59,9 +58,8 @@ export default function SignInPage() {
 
         <div className="w-full max-w-[420px] my-auto bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2rem] p-8 sm:p-10 shadow-xl relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="mb-8 flex justify-center">
-            <div className="h-12 w-12 bg-zinc-100 dark:bg-white/10 rounded-xl flex items-center justify-center">
-              <GraduationCap className="h-6 w-6 text-zinc-900 dark:text-white" />
-            </div>
+            <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-10 w-auto dark:hidden" />
+            <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-10 w-auto" />
           </div>
           <SignInForm />
         </div>

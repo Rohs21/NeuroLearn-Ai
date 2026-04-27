@@ -6,7 +6,7 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  GraduationCap, BookOpen, Clock, History,
+  BookOpen, Clock, History,
   ArrowRight, Play, Briefcase, Bell,
   CheckCircle2, Circle, Flame, Trophy,
   Plus, BarChart2, Target, Layers, Zap,
@@ -202,14 +202,35 @@ function LeetCodeHeatmap({ activity, currentStreak, longestStreak, totalDays }: 
 }
 
 // ─── Playlist Card ─────────────────────────────────────────────────────────────
-function PlaylistCard({ playlist, index }: { playlist: Playlist; index: number }) {
+function PlaylistCard({ playlist, index, onDelete }: { playlist: Playlist; index: number; onDelete?: (id: string) => void }) {
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
-  const videoCount = Array.isArray(playlist.videos) ? playlist.videos.length : 0;
+  let parsedVideos = playlist.videos;
+  if (typeof parsedVideos === 'string') {
+    try { parsedVideos = JSON.parse(parsedVideos); } catch(e) {}
+  }
+  const videoCount = Array.isArray(parsedVideos) ? parsedVideos.length : (Array.isArray((parsedVideos as any)?.videos) ? (parsedVideos as any).videos.length : 0);
   const initial = playlist.title.slice(0, 2).toUpperCase();
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (confirm('Are you sure you want to delete this playlist?')) {
+      if (onDelete) onDelete(playlist.id);
+    }
+  };
 
   return (
     <Link href={`/playlist/${playlist.id}`}>
-      <div className="group cursor-pointer rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl hover:shadow-xl hover:border-primary/40 transition-all duration-300 overflow-hidden h-full flex flex-col">
+      <div className="group cursor-pointer rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl hover:shadow-xl hover:border-primary/40 transition-all duration-300 overflow-hidden h-full flex flex-col relative">
+        {/* Delete Button */}
+        <button 
+          onClick={handleDelete}
+          className="absolute top-3 left-3 z-20 p-2 rounded-full bg-black/20 hover:bg-red-500/80 text-white backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-200"
+          title="Delete Playlist"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+        </button>
+
         {/* Gradient banner */}
         <div className={`bg-gradient-to-br ${gradient} h-28 flex items-center justify-center relative border-b border-zinc-200 dark:border-white/10`}>
           <span className="text-4xl font-medium text-black/10 dark:text-white/10 select-none absolute inset-0 flex items-center justify-center tracking-widest">
@@ -219,7 +240,7 @@ function PlaylistCard({ playlist, index }: { playlist: Playlist; index: number }
             <BookOpen className="h-6 w-6 text-white" />
           </div>
           {/* video count badge */}
-          <div className="absolute top-3 right-3 bg-black/30 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+          <div className="absolute top-3 right-3 z-20 bg-black/30 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
             {videoCount} videos
           </div>
         </div>
@@ -297,7 +318,13 @@ export default function Dashboard() {
       setStats(prev => ({
         ...prev,
         totalPlaylists: data.length,
-        totalVideos: data.reduce((s: number, p: Playlist) => s + (p.videos?.length || 0), 0),
+        totalVideos: data.reduce((s: number, p: Playlist) => {
+          let parsed = p.videos;
+          if (typeof parsed === 'string') {
+            try { parsed = JSON.parse(parsed); } catch(e) {}
+          }
+          return s + (Array.isArray(parsed) ? parsed.length : (Array.isArray((parsed as any)?.videos) ? (parsed as any).videos.length : 0));
+        }, 0),
       }));
     } finally { setPlaylistsLoading(false); }
   };
@@ -327,6 +354,18 @@ export default function Dashboard() {
     } catch { /* silent */ }
   };
 
+  const handleDeletePlaylist = async (id: string) => {
+    try {
+      const res = await fetch(`/api/playlist/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setRecentPlaylists(prev => prev.filter(p => p.id !== id));
+        loadPlaylists(); // reload stats
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const loadStreak = async () => {
     try {
       const res = await fetch('/api/dashboard/streak', { credentials: 'include' });
@@ -347,17 +386,17 @@ export default function Dashboard() {
     const now = new Date();
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(now);
-      d.setDate(now.getDate() - (6 - i));
+      d.setUTCDate(now.getUTCDate() - (6 - i));
       const dateStr = d.toISOString().slice(0, 10);
       return {
-        day: DAYS[d.getDay()],
+        day: DAYS[d.getUTCDay()],
         value: watchHistory.filter(h => h.viewedAt?.slice(0, 10) === dateStr).length,
       };
     });
   }, [watchHistory]);
 
   const completionPct = stats.totalVideos > 0
-    ? Math.round((stats.completedVideos / stats.totalVideos) * 100) : 0;
+    ? Math.min(100, Math.round((stats.completedVideos / stats.totalVideos) * 100)) : 0;
 
   const donutData = [
     { name: 'Completed', value: stats.completedVideos || 0 },
@@ -384,14 +423,13 @@ export default function Dashboard() {
 
       {/* ── NAV ─────────────────────────────────────────────────── */}
       <header className="border-b border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-2xl sticky top-0 z-50">
-        <div className="px-6 py-3 flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
-            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-bold">NeuroLearn</span>
+        <div className="max-w-7xl mx-auto w-full px-6 py-3 flex items-center gap-4">
+          <Link href="/" className="flex items-center shrink-0 hover:opacity-80 transition-opacity">
+            <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-8 w-auto dark:hidden" />
+            <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-8 w-auto" />
           </Link>
 
+          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-1 ml-4">
             {NAV_LINKS.map(nav => (
               <button
@@ -408,7 +446,24 @@ export default function Dashboard() {
             ))}
           </nav>
 
-          <div className="ml-auto flex items-center gap-3">
+          {/* Mobile Nav (Scrollable) */}
+          <nav className="flex md:hidden overflow-x-auto items-center gap-1 ml-2 no-scrollbar">
+            {NAV_LINKS.map(nav => (
+              <button
+                key={nav}
+                onClick={() => handleNav(nav)}
+                className={`px-3 py-1 whitespace-nowrap rounded-full text-xs font-medium transition-all ${
+                  activeNav === nav
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                {nav}
+              </button>
+            ))}
+          </nav>
+
+          <div className="ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
             <ThemeToggle />
             <button className="h-8 w-8 rounded-full border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
               <Bell className="h-4 w-4" />
@@ -444,21 +499,24 @@ export default function Dashboard() {
           {isMounted && sessionStatus !== 'loading' && (
             <>
               {/* ── HERO BANNER ────────────────────────────────── */}
-              <div className="mb-8 relative overflow-hidden bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-[2rem] p-8 sm:p-10 shadow-xl">
-                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
-                  <GraduationCap className="w-48 h-48" />
+              <div className="mb-6 relative overflow-hidden bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-xl p-3 sm:p-4 shadow-sm max-w-7xl mx-auto w-full">
+                <div className="absolute top-0 right-0 p-2 opacity-[0.03] pointer-events-none">
+                  <img src="/logo_normal.svg" alt="" className="w-20 h-auto dark:hidden" />
+                  <img src="/logo_normal_dark.svg" alt="" className="hidden dark:block w-20 h-auto" />
                 </div>
-                <div className="relative z-10">
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/60 dark:bg-black/40 border border-black/5 dark:border-white/5 text-xs font-medium mb-4 backdrop-blur-md">
-                    <span className="flex h-2 w-2 rounded-full bg-zinc-500 animate-pulse" />
-                    Live Learning Dashboard
+                <div className="relative z-10 flex items-center justify-between">
+                  <div>
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/60 dark:bg-black/40 border border-black/5 dark:border-white/5 text-[9px] font-medium mb-1 backdrop-blur-md">
+                      <span className="flex h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                      Live Learning Dashboard
+                    </div>
+                    <h1 className="text-base sm:text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">
+                      Welcome back, <span>{session?.user?.name?.split(' ')[0] ?? 'Learner'}</span>
+                    </h1>
+                    <p className="text-muted-foreground text-xs mt-1 max-w-lg">
+                      You're making great progress. Jump right back into your playlists or start a new mock interview.
+                    </p>
                   </div>
-                  <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight mb-3 text-zinc-900 dark:text-white">
-                    Welcome back, <span>{session?.user?.name?.split(' ')[0] ?? 'Learner'}</span>
-                  </h1>
-                  <p className="text-muted-foreground text-base sm:text-lg max-w-2xl">
-                    You're making great progress. Jump right back into your playlists or start a new mock interview to test your knowledge.
-                  </p>
                 </div>
               </div>
 
@@ -482,7 +540,7 @@ export default function Dashboard() {
                   <CardContent className="pt-0">
                     <div className="flex items-baseline gap-1 mb-3">
                       <span className="text-3xl font-bold">{Math.round(stats.totalWatchTime / 60)}</span>
-                      <span className="text-sm text-muted-foreground">hrs total</span>
+                      <span className="text-sm text-muted-foreground">mins total</span>
                     </div>
                     <div className="flex gap-4 mb-2">
                       <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -622,16 +680,14 @@ export default function Dashboard() {
                       <BookOpen className="h-10 w-10 text-muted-foreground/30" />
                       <p className="text-sm text-muted-foreground font-medium">No playlists yet</p>
                       <p className="text-xs text-muted-foreground">Search a topic on the home page to create one</p>
-                      <Link href="/">
-                        <Button size="sm" variant="outline" className="mt-2 gap-1">
-                          <Plus className="h-3 w-3" /> Create Playlist
-                        </Button>
-                      </Link>
+                      <Button asChild variant="default" className="rounded-xl shadow-md font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+                        <Link href="/"><Plus className="h-4 w-4 mr-2" /> New Playlist</Link>
+                      </Button>
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                       {recentPlaylists.map((playlist, i) => (
-                        <PlaylistCard key={playlist.id} playlist={playlist} index={i} />
+                        <PlaylistCard key={playlist.id} playlist={playlist} index={i} onDelete={handleDeletePlaylist} />
                       ))}
                     </div>
                   )
@@ -721,7 +777,7 @@ export default function Dashboard() {
               { icon: BookOpen, label: 'Playlists', value: stats.totalPlaylists },
               { icon: Play, label: 'Videos total', value: stats.totalVideos },
               { icon: CheckCircle2, label: 'Completed', value: stats.completedVideos },
-              { icon: Clock, label: 'Watch time', value: `${Math.round(stats.totalWatchTime / 60)}h` },
+              { icon: Clock, label: 'Watch time', value: `${Math.round(stats.totalWatchTime / 60)}m` },
               { icon: Briefcase, label: 'Interviews', value: stats.totalInterviews },
             ].map(({ icon: Icon, label, value }) => (
               <div key={label} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-muted/60 transition-colors">

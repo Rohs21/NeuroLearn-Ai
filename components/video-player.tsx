@@ -48,6 +48,7 @@ export function VideoPlayer({
   const { data: session } = useSession() as { data: { user: { id: string; email?: string } } | null };
   const playerRef = useRef<any>(null);
   const playerInitialized = useRef(false);
+  const historyRecorded = useRef(false);
 
   const [summary, setSummary] = useState<string>('');
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
@@ -99,6 +100,11 @@ export function VideoPlayer({
         playerVars: { rel: 0, modestbranding: 1 },
         events: {
           onStateChange: (event: any) => {
+            if (event.data === 1 && !historyRecorded.current) {
+              // 1 is YT.PlayerState.PLAYING
+              historyRecorded.current = true;
+              recordHistory(false);
+            }
             if (event.data === 0) handleComplete(); // video ended
           },
         },
@@ -171,18 +177,22 @@ export function VideoPlayer({
     } catch {}
   };
 
-  const handleComplete = useCallback(async () => {
-    if (completed) return;
-    setCompleted(true);
-
+  const recordHistory = useCallback(async (isCompleted: boolean) => {
     try {
       await fetch('/api/history', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ videoId, watchTime: 0, completed: true }),
+        body: JSON.stringify({ videoId, watchTime: 0, completed: isCompleted, title, description }),
       });
     } catch {}
+  }, [videoId, title, description]);
+
+  const handleComplete = useCallback(async () => {
+    if (completed) return;
+    setCompleted(true);
+
+    await recordHistory(true);
 
     // Update playlist progress
     if (playlistId) {
@@ -198,7 +208,7 @@ export function VideoPlayer({
 
     if (onVideoCompleted) onVideoCompleted(videoId);
     if (onComplete) onComplete();
-  }, [completed, videoId, playlistId, onVideoCompleted, onComplete]);
+  }, [completed, videoId, playlistId, onVideoCompleted, onComplete, recordHistory]);
 
   const handleQuizSubmit = async () => {
     setQuizSubmitted(true);
@@ -272,22 +282,22 @@ export function VideoPlayer({
       {/* Tabs */}
       <Tabs defaultValue="summary" className="w-full">
         <TabsList className="grid w-full grid-cols-4 h-auto bg-white/50 dark:bg-zinc-900/40 backdrop-blur-xl p-1.5 rounded-[1.5rem] border border-zinc-200 dark:border-white/10 shadow-sm">
-          <TabsTrigger value="summary" className="rounded-[1rem] data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white font-medium">
+          <TabsTrigger value="summary" className="rounded-[1rem] data-[state=active]:bg-zinc-900 dark:data-[state=active]:bg-white data-[state=active]:shadow-md transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-white dark:data-[state=active]:text-zinc-900 font-medium">
             <Brain className="h-4 w-4 mr-1.5" />
             <span className="hidden sm:inline">AI Summary</span>
             <span className="sm:hidden">Summary</span>
           </TabsTrigger>
-          <TabsTrigger value="flashcards" className="rounded-[1rem] data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white font-medium">
+          <TabsTrigger value="flashcards" className="rounded-[1rem] data-[state=active]:bg-zinc-900 dark:data-[state=active]:bg-white data-[state=active]:shadow-md transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-white dark:data-[state=active]:text-zinc-900 font-medium">
             <BookOpen className="h-4 w-4 mr-1.5" />
             <span className="hidden sm:inline">Flashcards</span>
             <span className="sm:hidden">Cards</span>
           </TabsTrigger>
-          <TabsTrigger value="quiz" className="rounded-[1rem] data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white font-medium">
+          <TabsTrigger value="quiz" className="rounded-[1rem] data-[state=active]:bg-zinc-900 dark:data-[state=active]:bg-white data-[state=active]:shadow-md transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-white dark:data-[state=active]:text-zinc-900 font-medium">
             <CheckCircle2 className="h-4 w-4 mr-1.5" />
             <span className="hidden sm:inline">Knowledge Check</span>
             <span className="sm:hidden">Quiz</span>
           </TabsTrigger>
-          <TabsTrigger value="notes" className="rounded-[1rem] data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white font-medium">
+          <TabsTrigger value="notes" className="rounded-[1rem] data-[state=active]:bg-zinc-900 dark:data-[state=active]:bg-white data-[state=active]:shadow-md transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-white dark:data-[state=active]:text-zinc-900 font-medium">
             <FileText className="h-4 w-4 mr-1.5" />
             <span className="hidden sm:inline">My Notes</span>
             <span className="sm:hidden">Notes</span>
@@ -407,6 +417,18 @@ export function VideoPlayer({
                       <p className="text-sm font-medium">
                         {Math.round((quizScore / quiz.length) * 100)}% — {quizScore / quiz.length >= 0.7 ? '🎉 Great work!' : '📚 Keep practicing'}
                       </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-4 border-zinc-200 dark:border-white/10"
+                        onClick={() => {
+                          setQuizSubmitted(false);
+                          setQuizScore(null);
+                          setSelectedAnswers({});
+                        }}
+                      >
+                        Retake Quiz
+                      </Button>
                     </div>
                   )}
                   {quiz.map((question, qIndex) => (

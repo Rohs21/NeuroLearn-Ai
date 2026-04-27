@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { VideoCard } from './video-card';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Clock, Star, Sparkles } from 'lucide-react';
+import { AddInterview } from '@/app/dashboard/_components/AddInterview';
 
 interface PlaylistGridProps {
   playlist: {
@@ -63,14 +64,23 @@ export function PlaylistGrid({ playlist, onVideoPlay, onBookmarkPlaylist }: Play
           </div>
 
           <div className="flex flex-row flex-wrap lg:flex-col gap-3 lg:min-w-[200px]">
-            <Button 
-              size="lg"
-              onClick={() => router.push("/dashboard/AddInterview")}
-              className="flex-1 lg:w-full rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 border-0 h-12 transition-all font-medium"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              Mock Interview
-            </Button>
+            <AddInterview 
+              variant="custom"
+              initialData={{
+                jobPosition: playlist.title,
+                jobDesc: playlist.description,
+                jobExperience: "1"
+              }}
+              customTrigger={
+                <Button 
+                  size="lg"
+                  className="flex-1 lg:w-full rounded-xl bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-zinc-200 border-0 h-12 transition-all font-medium"
+                >
+                  <Sparkles className="h-4 w-4 mr-2" />
+                  Mock Interview
+                </Button>
+              }
+            />
             
             {onBookmarkPlaylist && (
               <Button 

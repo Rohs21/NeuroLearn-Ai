@@ -1244,11 +1244,11 @@ const Hyperspeed: FC<HyperspeedProps> = ({ effectOptions = {} }) => {
     if (theme === 'light') {
       options.colors = {
         ...options.colors,
-        background: 0xffffff,
-        roadColor: 0xf0f0f0,
-        islandColor: 0xe5e5e5,
-        shoulderLines: 0x111111,
-        brokenLines: 0x111111,
+        background: 0xe0e0e0, // softer gray so lights don't vanish
+        roadColor: 0xd0d0d0,
+        islandColor: 0xc0c0c0,
+        shoulderLines: 0x555555,
+        brokenLines: 0x555555,
       };
     }
     if (typeof options.distortion === 'string') {

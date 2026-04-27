@@ -69,9 +69,9 @@ function RecordAnswerSection({
     });
 
     useEffect(() => {
-        (results as SpeechResult[] | undefined)?.forEach((result) => {
-            setUserAnswer(prevAns => prevAns + ' ' + result.transcript);
-        });
+        if (!results || results.length === 0) return;
+        const text = (results as SpeechResult[]).map(r => r.transcript).join(' ');
+        setUserAnswer(text);
     }, [results]);
 
     // Reset answer submitted state when question changes
@@ -125,7 +125,7 @@ function RecordAnswerSection({
                     correctAns: mockInterviewQuestion[activeQuestionIndex]?.answer,
                     userAns: userAnswer,
                     feedback: JsonFeedbackResp?.feedback,
-                    rating: JsonFeedbackResp?.rating,
+                    rating: JsonFeedbackResp?.rating ? String(JsonFeedbackResp.rating) : undefined,
                     userEmail: session?.user?.email ?? '',
                 })
             });
@@ -170,10 +170,12 @@ function RecordAnswerSection({
             </div>
 
             {/* Display current answer */}
-            {userAnswer && (
+            {(userAnswer || interimResult) && (
                 <div className='p-4 sm:p-5 mt-6 border border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-50 dark:bg-zinc-800/30 w-full max-w-[500px]'>
                     <h3 className='text-xs sm:text-sm font-semibold text-zinc-900 dark:text-white mb-2 tracking-wide uppercase'>Live Transcript:</h3>
-                    <p className='text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed'>{userAnswer.trim()}</p>
+                    <p className='text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed'>
+                        {userAnswer.trim()} {isRecording && interimResult && <span className="opacity-50">{interimResult}</span>}
+                    </p>
                 </div>
             )}
 
@@ -184,9 +186,15 @@ function RecordAnswerSection({
                 </div>
             )}
 
-            <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 mt-8 w-full max-w-[500px]'>
-                <Button 
-                    disabled={loading}
+            <div className='flex flex-col gap-3 mt-8 w-full max-w-[500px] items-center'>
+                {error && (
+                    <div className="w-full text-center text-sm text-red-500 mb-2">
+                        Microphone error: {error}
+                    </div>
+                )}
+                <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 w-full'>
+                    <Button 
+                        disabled={loading || !!error}
                     variant="outline" 
                     onClick={StartStopRecording}
                     className={`flex-1 font-medium transition-all ${isRecording ? 'border-zinc-900 dark:border-white bg-zinc-50 dark:bg-zinc-800/50' : 'border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
@@ -211,6 +219,7 @@ function RecordAnswerSection({
                         {loading ? 'Submitting...' : 'Submit Answer'}
                     </Button>
                 )}
+                </div>
             </div>
         </div>
     );

@@ -9,7 +9,7 @@ import { Navbar } from '@/components/navbar';
 import { AnimateSection } from '@/components/animate-section';
 import { Button } from '@/components/ui/button';
 import {
-  GraduationCap, Sparkles, Brain,
+  Sparkles, Brain,
   CheckCircle, ArrowUpRight, Plus, Minus, BookOpen,
   Zap, Target,
 } from 'lucide-react';
@@ -191,9 +191,15 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState(0);
   const [openFaq, setOpenFaq]     = useState<number | null>(null);
   const [hoveredTestimonial, setHoveredTestimonial] = useState<number | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const router = useRouter();
   const { status } = useSession();
+  const isAuthenticated = mounted && status === 'authenticated';
 
   const handleSearch = async (query: string, language: string, difficulty: string) => {
     setIsLoading(true); setError(''); setPlaylist(null);
@@ -225,8 +231,6 @@ return (
       <div className="fixed inset-0 -z-10 pointer-events-none">
         <Hyperspeed
           effectOptions={{
-            onSpeedUp: () => { },
-            onSlowDown: () => { },
             distortion: 'turbulentDistortion',
             length: 400,
             roadWidth: 10,
@@ -387,7 +391,7 @@ return (
                   <div>
                     <h3 className="text-xl md:text-2xl font-semibold text-zinc-900 dark:text-white mb-3 leading-snug">{tab.heading}</h3>
                     <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed mb-7">{tab.body}</p>
-                    <Link href={status === 'authenticated' ? '/dashboard' : '/auth/signup'}>
+                    <Link href={isAuthenticated ? '/dashboard' : '/auth/signup'}>
                       <button className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full px-5 py-2.5 text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all">
                         Get Started <ArrowUpRight className="h-4 w-4" />
                       </button>
@@ -440,7 +444,7 @@ return (
               </div>
 
               <AnimateSection delay={200} className="flex justify-center mt-8">
-                <Link href={status === 'authenticated' ? '/dashboard' : '/auth/signup'}>
+                <Link href={isAuthenticated ? '/dashboard' : '/auth/signup'}>
                   <button className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full px-6 py-3 text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all">
                     See All Topics <ArrowUpRight className="h-4 w-4" />
                   </button>
@@ -484,7 +488,7 @@ return (
               </AnimateSection>
 
               <AnimateSection delay={100}>
-                <div className="grid grid-cols-3 gap-3 items-stretch">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-stretch">
                   <div className="flex flex-col gap-3">
                     {UNIQUE_FEATURES.slice(0, 3).map(({ title, desc }) => (
                       <div key={title} className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-2xl p-5 flex-1">
@@ -498,10 +502,9 @@ return (
                   </div>
                   <div className="bg-zinc-900 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-2xl flex items-center justify-center p-8">
                     <div className="text-center">
-                      <div className="h-14 w-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-3">
-                        <GraduationCap className="h-8 w-8 text-black" />
+                      <div className="flex justify-center mx-auto mb-4">
+                        <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="h-10 w-auto" />
                       </div>
-                      <p className="text-white font-semibold text-lg">NeuroLearn</p>
                       <p className="text-zinc-500 text-xs mt-0.5">AI-Powered Learning</p>
                     </div>
                   </div>
@@ -569,17 +572,18 @@ return (
           {/* 8. BOTTOM CTA */}
           <section className="py-24 px-6 border-t border-zinc-200 dark:border-white/10">
             <AnimateSection className="max-w-2xl mx-auto text-center">
-              <div className="h-14 w-14 bg-zinc-900 dark:bg-white rounded-2xl flex items-center justify-center mx-auto mb-7">
-                <GraduationCap className="h-8 w-8 text-white dark:text-black" />
+              <div className="flex justify-center mb-7">
+                <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-12 w-auto dark:hidden" />
+                <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-12 w-auto" />
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-3">Start Learning Today</h2>
               <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed mb-9">
                 Your AI-powered learning companion is ready. Search any topic and get a structured
                 playlist from beginner to advanced in seconds — completely free.
               </p>
-              <Link href={status === 'authenticated' ? '/dashboard' : '/auth/signup'}>
+              <Link href={isAuthenticated ? '/dashboard' : '/auth/signup'}>
                 <button className="flex items-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-black rounded-full px-7 py-3.5 text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all mx-auto">
-                  {status === 'authenticated' ? 'Go to Dashboard' : 'Create Free Account'}
+                  {isAuthenticated ? 'Go to Dashboard' : 'Create Free Account'}
                   <ArrowUpRight className="h-4 w-4" />
                 </button>
               </Link>
@@ -591,11 +595,9 @@ return (
             <div className="max-w-5xl mx-auto">
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-14">
                 <div className="md:col-span-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 w-7 bg-zinc-900 dark:bg-white rounded-lg flex items-center justify-center">
-                      <GraduationCap className="h-4 w-4 text-white dark:text-black" />
-                    </div>
-                    <span className="text-zinc-900 dark:text-white font-semibold">NeuroLearn</span>
+                  <div className="flex items-center mb-3">
+                    <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-8 w-auto dark:hidden" />
+                    <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-8 w-auto" />
                   </div>
                   <p className="text-zinc-500 text-sm leading-relaxed mb-5 max-w-xs">
                     AI-curated learning paths, streak tracking, mock interviews, and quizzes — all free.

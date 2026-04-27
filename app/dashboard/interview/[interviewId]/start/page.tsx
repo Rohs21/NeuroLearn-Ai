@@ -29,9 +29,11 @@ function StartInterview({ params }: StartInterviewProps) {
         const [interviewData, setInterviewData] = useState<InterviewData | null>(null);
         const [mockInterviewQuestion, setMockInterviewQuestion] = useState<any[]>([]);
         const [activeQuestionIndex, setActiveQuestionIndex] = useState(0);
+        const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         const GetInterviewDetails = async () => {
+            setIsLoading(true);
             try {
                 console.log("Fetching interview details for:", params.interviewId);
                 const resp = await fetch(`/api/interview?mockId=${params.interviewId}`);
@@ -71,10 +73,21 @@ function StartInterview({ params }: StartInterviewProps) {
                 console.error('Error fetching interview details:', error);
                 setMockInterviewQuestion([]);
                 setInterviewData(null);
+            } finally {
+                setIsLoading(false);
             }
         };
         GetInterviewDetails();
     }, [params.interviewId]);
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                <p className="text-zinc-500 font-medium">Loading interview questions...</p>
+            </div>
+        );
+    }
 
     return (
         <div className='px-3 sm:px-4 py-4 sm:py-6'>

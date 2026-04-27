@@ -31,22 +31,28 @@ export async function GET(req: NextRequest) {
     let currentStreak = 0;
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
+    const todayStr = today.toISOString().slice(0, 10);
 
-    for (let i = 0; i < days.length; i++) {
-      const expected = new Date(today);
-      expected.setUTCDate(today.getUTCDate() - i);
-      const expectedStr = expected.toISOString().slice(0, 10);
-      if (days[i] === expectedStr) {
-        currentStreak++;
-      } else {
-        // Allow missing today (streak still counts if yesterday was last active)
-        if (i === 0 && days[0] !== expectedStr) {
-          const yesterday = new Date(today);
-          yesterday.setUTCDate(today.getUTCDate() - 1);
-          if (days[0] !== yesterday.toISOString().slice(0, 10)) break;
-          continue;
+    if (days.length > 0) {
+      const yesterday = new Date(today);
+      yesterday.setUTCDate(today.getUTCDate() - 1);
+      const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+      if (days[0] === todayStr || days[0] === yesterdayStr) {
+        currentStreak = 1;
+        let streakStartDate = days[0];
+
+        for (let i = 1; i < days.length; i++) {
+          const expectedDate = new Date(streakStartDate);
+          expectedDate.setUTCDate(expectedDate.getUTCDate() - i);
+          const expectedStr = expectedDate.toISOString().slice(0, 10);
+
+          if (days[i] === expectedStr) {
+            currentStreak++;
+          } else {
+            break;
+          }
         }
-        break;
       }
     }
 

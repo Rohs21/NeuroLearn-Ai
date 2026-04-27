@@ -6,7 +6,7 @@ import { VideoPlayer } from '@/components/video-player';
 import { PlaylistSidebar } from '@/components/playlist-sidebar';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, GraduationCap } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { Navbar } from '@/components/navbar';
 
 function WatchPageContent() {
@@ -15,6 +15,11 @@ function WatchPageContent() {
   const videoId = searchParams.get('v');
   const [playlistData, setPlaylistData] = useState(null);
   const [playlistId, setPlaylistId] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const [videoData, setVideoData] = useState({
     title: 'Loading video...',
@@ -80,6 +85,14 @@ function WatchPageContent() {
     });
   }, [videoId]);
 
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-[#09090b] relative z-10">
+        <Navbar />
+      </div>
+    );
+  }
+
   if (!videoId) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -97,9 +110,9 @@ function WatchPageContent() {
       <Navbar />
 
       {/* Main Content */}
-      <div className="flex flex-col lg:flex-row h-[calc(100vh-64px)] w-full gap-8 p-4 sm:p-6 lg:p-8 max-w-[1920px] mx-auto overflow-hidden">
+      <div className="flex flex-col lg:flex-row min-h-[calc(100vh-64px)] lg:h-[calc(100vh-64px)] w-full gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8 max-w-[1920px] mx-auto overflow-y-auto lg:overflow-hidden">
         {/* Video Player Section */}
-        <div className={`${playlist ? 'flex-1 min-w-0' : 'w-full'} flex flex-col h-full overflow-y-auto scrollbar-hide rounded-[2rem]`}>
+        <div className={`${playlist ? 'flex-1 min-w-0' : 'w-full'} flex flex-col h-auto lg:h-full overflow-visible lg:overflow-y-auto scrollbar-hide rounded-[2rem]`}>
           <style jsx>{`
             .scrollbar-hide::-webkit-scrollbar {
               display: none;
@@ -143,7 +156,7 @@ function WatchPageContent() {
 
         {/* Playlist Sidebar */}
         {playlist && (
-          <div className="w-full lg:w-[420px] flex-shrink-0 lg:h-full">
+          <div className="w-full lg:w-[420px] flex-shrink-0 h-[500px] lg:h-full mb-8 lg:mb-0">
             <PlaylistSidebar
               playlist={playlist}
               currentVideoId={videoId}
