@@ -2,79 +2,86 @@
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { Button } from '@/components/ui/button';
 import { GraduationCap } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
-interface NavbarProps {
-  showBackButton?: boolean;
-  showAuthButtons?: boolean;
-  isAuthenticated?: boolean;
-}
+const NAV_LINKS = [
+  { label: 'Features',    href: '/#features' },
+  { label: 'How it Works', href: '/#how-it-works' },
+  { label: 'FAQ',         href: '/#faq' },
+];
 
-export function Navbar({ showBackButton = false, showAuthButtons = true, isAuthenticated = false }: NavbarProps) {
+export function Navbar() {
   const router = useRouter();
-
-  // Use client-side only rendering for interactive elements
+  const { data: session, status } = useSession();
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Initial SSR-safe render
-  const authButtons = mounted ? (
-    <div className="flex items-center gap-2 sm:gap-4">
-      {showAuthButtons && (
-        isAuthenticated ? (
-          <>
-            <Button variant="default" size="sm" className="text-xs sm:text-sm px-2 sm:px-4" onClick={() => router.push('/dashboard')}>
-              <span className="hidden sm:inline">Dashboard</span>
-              <span className="sm:hidden">Dash</span>
-            </Button>
-            <Button variant="ghost" size="sm" className="text-xs sm:text-sm px-2 sm:px-4" onClick={() => signOut({ callbackUrl: '/' })}>
-              Logout
-            </Button>
-          </>
-        ) : (
-          <Button variant="ghost" size="sm" className="text-xs sm:text-sm" onClick={() => router.push('/auth/signin')}>
-            Sign In
-          </Button>
-        )
-      )}
-      <ThemeToggle />
-    </div>
-  ) : null;
+  useEffect(() => { setMounted(true); }, []);
 
   return (
-    <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-      <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {showBackButton && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.back()}
-                className="flex items-center gap-2"
-              >
-                Back
-              </Button>
-            )}
-            
-            <Link href="/">
-              <div className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity">
-                <div className="h-7 w-7 sm:h-8 sm:w-8 bg-primary rounded-lg flex items-center justify-center">
-                  <GraduationCap className="h-4 w-4 sm:h-5 sm:w-5 text-primary-foreground" />
-                </div>
-                <h1 className="text-base sm:text-xl font-bold">NeuroLearn-AI</h1>
-              </div>
-            </Link>
+    <header className="sticky top-0 z-50 w-full border-b border-zinc-200/50 dark:border-white/10 bg-white/70 dark:bg-zinc-950/60 backdrop-blur-2xl transition-all">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
+
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0 group">
+          <div className="h-8 w-8 bg-zinc-900 dark:bg-white rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-sm">
+            <GraduationCap className="h-5 w-5 text-white dark:text-zinc-900" />
           </div>
-          
-          {authButtons}
+          <span className="text-lg font-semibold tracking-tight text-zinc-900 dark:text-white">NeuroLearn</span>
+        </Link>
+
+        {/* Center nav links */}
+        <nav className="hidden md:flex items-center gap-1 bg-zinc-100/50 dark:bg-white/5 backdrop-blur-md px-2 py-1 rounded-full border border-zinc-200/50 dark:border-white/5">
+          {NAV_LINKS.map(({ label, href }) => (
+            <Link
+              key={label}
+              href={href}
+              className="px-4 py-1.5 text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors rounded-full hover:bg-white dark:hover:bg-white/10"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Right actions */}
+        <div className="flex items-center gap-3 shrink-0">
+          {mounted && <ThemeToggle />}
+
+          {mounted && status !== 'loading' && (
+            status === 'authenticated' ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="hidden sm:block text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/5"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  className="text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl px-4 sm:px-5 py-2 font-medium hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => router.push('/auth/signin')}
+                  className="hidden sm:block text-sm font-semibold text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white transition-colors px-3 py-2 rounded-xl hover:bg-zinc-100 dark:hover:bg-white/5"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => router.push('/auth/signup')}
+                  className="text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl px-4 sm:px-5 py-2 font-medium hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
+                >
+                  Get Started
+                </button>
+              </div>
+            )
+          )}
         </div>
       </div>
     </header>

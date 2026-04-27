@@ -7,6 +7,7 @@ import useSpeechToText from 'react-hook-speech-to-text';
 import { Mic, StopCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { chatSession } from '@/utils/GeminiAIModal'
+import { useSession } from 'next-auth/react'
 
 // Interface for individual question structure
 interface MockInterviewQuestion {
@@ -49,6 +50,7 @@ function RecordAnswerSection({
     activeQuestionIndex,
     interviewData
 }: RecordAnswerSectionProps): JSX.Element {
+    const { data: session } = useSession();
     const [userAnswer, setUserAnswer] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(false);
     const [answerSubmitted, setAnswerSubmitted] = useState<boolean>(false);
@@ -124,7 +126,7 @@ function RecordAnswerSection({
                     userAns: userAnswer,
                     feedback: JsonFeedbackResp?.feedback,
                     rating: JsonFeedbackResp?.rating,
-                    userEmail: '',
+                    userEmail: session?.user?.email ?? '',
                 })
             });
             const data = await resp.json();
@@ -146,55 +148,56 @@ function RecordAnswerSection({
     };
 
     return (
-        <div className='flex items-center justify-center flex-col px-2 sm:px-0'>
-            <div className='flex flex-col mt-10 sm:mt-20 justify-center items-center bg-black rounded-lg p-3 sm:p-5 w-full max-w-[500px]'>
-                <Image 
-                    src={'/webcam.png'} 
-                    width={150} 
-                    height={150} 
-                    alt="webcam img"
-                    className='absolute w-[120px] h-[120px] sm:w-[200px] sm:h-[200px]'
-                />
+        <div className='flex flex-col items-center justify-center w-full h-full p-6 sm:p-8 bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2rem] shadow-sm my-4 sm:my-10'>
+            <div className='flex flex-col justify-center items-center w-full max-w-[500px] aspect-square rounded-2xl overflow-hidden border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black/50 relative'>
+                {!isRecording && (
+                    <Image 
+                        src={'/webcam.png'} 
+                        width={150} 
+                        height={150} 
+                        alt="webcam img"
+                        className='absolute w-[120px] h-[120px] sm:w-[150px] sm:h-[150px] opacity-20 pointer-events-none z-0'
+                    />
+                )}
                 <Webcam
                     mirrored={true}
-                    className='w-full max-w-[500px]'
+                    className='w-full h-full object-cover z-10'
                     style={{
-                        height: 'auto',
-                        aspectRatio: '1/1',
-                        zIndex: 10,
+                        height: '100%',
+                        width: '100%'
                     }}
                 />
             </div>
 
             {/* Display current answer */}
             {userAnswer && (
-                <div className='p-3 sm:p-4 my-4 border rounded-lg bg-gray-50 dark:bg-gray-900 w-full max-w-md'>
-                    <h3 className='text-xs sm:text-sm font-medium text-gray-500 mb-2'>Your Answer:</h3>
-                    <p className='text-xs sm:text-sm text-gray-700 dark:text-gray-300'>{userAnswer.trim()}</p>
+                <div className='p-4 sm:p-5 mt-6 border border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-50 dark:bg-zinc-800/30 w-full max-w-[500px]'>
+                    <h3 className='text-xs sm:text-sm font-semibold text-zinc-900 dark:text-white mb-2 tracking-wide uppercase'>Live Transcript:</h3>
+                    <p className='text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 leading-relaxed'>{userAnswer.trim()}</p>
                 </div>
             )}
 
             {/* Answer submitted indicator */}
             {answerSubmitted && (
-                <div className='p-3 my-2 border rounded-lg bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-300 w-full max-w-md text-center'>
-                    ✓ Answer submitted for this question
+                <div className='p-3 sm:p-4 mt-6 border border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-white w-full max-w-[500px] text-center font-medium text-sm'>
+                    ✓ Answer successfully submitted
                 </div>
             )}
 
-            <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 my-6 sm:my-10 w-full sm:w-auto px-2 sm:px-0'>
+            <div className='flex flex-col sm:flex-row gap-3 sm:gap-4 mt-8 w-full max-w-[500px]'>
                 <Button 
                     disabled={loading}
                     variant="outline" 
                     onClick={StartStopRecording}
-                    className='w-full sm:w-auto'
+                    className={`flex-1 font-medium transition-all ${isRecording ? 'border-zinc-900 dark:border-white bg-zinc-50 dark:bg-zinc-800/50' : 'border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}
                 >
                     {isRecording ? (
-                        <span className='text-red-600 animate-pulse flex gap-2 items-center'>
-                            <StopCircle />Stop Recording
+                        <span className='text-zinc-900 dark:text-white animate-pulse flex gap-2 items-center'>
+                            <StopCircle className="h-4 w-4" /> Stop Recording
                         </span>
                     ) : (
-                        <span className='text-primary flex gap-2 items-center'>
-                            <Mic />Record Answer
+                        <span className='text-zinc-900 dark:text-white flex gap-2 items-center'>
+                            <Mic className="h-4 w-4" /> Record Answer
                         </span>
                     )}
                 </Button>
@@ -203,6 +206,7 @@ function RecordAnswerSection({
                     <Button 
                         disabled={loading || answerSubmitted}
                         onClick={handleSubmitAnswer}
+                        className='flex-1 font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 shadow-sm'
                     >
                         {loading ? 'Submitting...' : 'Submit Answer'}
                     </Button>

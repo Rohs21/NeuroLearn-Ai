@@ -1,39 +1,41 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo } from 'react';
 import { signOut, useSession, signIn } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, BookOpen, Clock, TrendingUp, History, ArrowRight, Play, Briefcase } from 'lucide-react';
+import {
+  GraduationCap, BookOpen, Clock, History,
+  ArrowRight, Play, Briefcase, Bell,
+  CheckCircle2, Circle, Flame, Trophy,
+  Plus, BarChart2, Target, Layers, Zap,
+} from 'lucide-react';
 import Link from 'next/link';
 import { InterviewList } from './_components/InterviewList';
 import { AddInterview } from './_components/AddInterview';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from 'recharts';
 
-// ---------- Types ----------
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 type Stats = {
   totalPlaylists: number;
   totalVideos: number;
   completedVideos: number;
   totalWatchTime: number;
-  totalInterviews?: number;
+  totalInterviews: number;
 };
 
-type SearchHistoryItem = {
-  query: string;
-  createdAt: string;
-  resultsCount: number;
-  video?: {
-    title?: string;
-    youtubeId?: string;
-    // Add other video properties if needed
-  };
+type WatchHistory = {
+  id: string;
+  videoId: string;
+  video: { title: string; youtubeId: string; thumbnail?: string };
   watchTime?: number;
-  completed?: boolean;
-  viewedAt?: string;
+  completed: boolean;
+  viewedAt: string;
 };
 
 type Playlist = {
@@ -44,425 +46,735 @@ type Playlist = {
   createdAt: string;
 };
 
-type WatchHistory = {
-  id: string;
-  videoId: string;
-  video: {
-    title: string;
-    youtubeId: string;
-    thumbnail?: string;
-  };
-  watchTime?: number;
-  completed: boolean;
-  viewedAt: string;
+type ActivityDay = { date: string; count: number };
+
+type StreakData = {
+  currentStreak: number;
+  longestStreak: number;
+  totalDays: number;
+  activity: ActivityDay[];
 };
 
-type Bookmark = {
-  id: string;
-  title: string;
-  url: string;
-};
+// ─── Palette for playlist cards ───────────────────────────────────────────────
+const CARD_GRADIENTS = [
+  'from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-900',
+  'from-zinc-100 to-zinc-200 dark:from-zinc-700 dark:to-zinc-800',
+  'from-zinc-300 to-zinc-400 dark:from-zinc-900 dark:to-zinc-950',
+];
 
-type Badge = {
-  id: string;
-  title: string;
-  description?: string;
-  imageUrl?: string;
-  awardedAt: string;
-  moduleId?: string;
-};
+// ─── LeetCode Heatmap ─────────────────────────────────────────────────────────
+function HeatmapCell({ count, date }: { count: number; date: string }) {
+  const intensity =
+    count === 0 ? 'bg-muted'
+    : count === 1 ? 'bg-primary/25'
+    : count === 2 ? 'bg-primary/55'
+    : count >= 3  ? 'bg-primary'
+    : 'bg-muted';
 
-// ---------- Component ----------
+  return (
+    <div
+      title={`${date}: ${count} video${count !== 1 ? 's' : ''}`}
+      className={`h-3 w-3 rounded-sm ${intensity} transition-colors cursor-default hover:ring-1 hover:ring-primary/60`}
+    />
+  );
+}
+
+function LeetCodeHeatmap({ activity, currentStreak, longestStreak, totalDays }: StreakData) {
+  // Pad so grid starts on Sunday
+  const firstDate = activity.length > 0 ? new Date(activity[0].date + 'T00:00:00Z') : new Date();
+  const startOffset = firstDate.getUTCDay(); // 0=Sun
+  const padded: (ActivityDay | null)[] = [
+    ...Array(startOffset).fill(null),
+    ...activity,
+  ];
+  // Build weeks (columns of 7)
+  const weeks: (ActivityDay | null)[][] = [];
+  for (let i = 0; i < padded.length; i += 7) {
+    weeks.push(padded.slice(i, i + 7));
+  }
+
+  // Month labels
+  const monthLabels: { label: string; col: number }[] = [];
+  let lastMonth = -1;
+  weeks.forEach((week, wi) => {
+    const firstReal = week.find(d => d !== null) as ActivityDay | undefined;
+    if (firstReal) {
+      const m = new Date(firstReal.date + 'T00:00:00Z').getUTCMonth();
+      if (m !== lastMonth) {
+        monthLabels.push({
+          label: new Date(firstReal.date + 'T00:00:00Z').toLocaleString('default', { month: 'short' }),
+          col: wi,
+        });
+        lastMonth = m;
+      }
+    }
+  });
+
+  const DAY_LABELS = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
+
+  return (
+    <div className="space-y-3">
+      {/* Streak stats row */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1.5">
+          <div className="h-8 w-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
+            <Flame className="h-4 w-4 text-orange-500" />
+          </div>
+          <div>
+            <p className="text-lg font-bold leading-none">{currentStreak}</p>
+            <p className="text-[10px] text-muted-foreground">day streak</p>
+          </div>
+        </div>
+        <div className="w-px h-8 bg-border" />
+        <div className="flex items-center gap-1.5">
+          <div className="h-8 w-8 rounded-lg bg-yellow-500/15 flex items-center justify-center">
+            <Trophy className="h-4 w-4 text-yellow-500" />
+          </div>
+          <div>
+            <p className="text-lg font-bold leading-none">{longestStreak}</p>
+            <p className="text-[10px] text-muted-foreground">longest</p>
+          </div>
+        </div>
+        <div className="w-px h-8 bg-border" />
+        <div className="flex items-center gap-1.5">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Zap className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-lg font-bold leading-none">{totalDays}</p>
+            <p className="text-[10px] text-muted-foreground">active days</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Grid */}
+      <div className="overflow-x-auto pb-1">
+        <div className="inline-flex gap-0">
+          {/* Day labels */}
+          <div className="flex flex-col gap-[3px] mr-1.5 mt-5">
+            {DAY_LABELS.map((d, i) => (
+              <span key={i} className="text-[9px] text-muted-foreground h-3 flex items-center w-6">{d}</span>
+            ))}
+          </div>
+
+          {/* Weeks */}
+          <div className="flex flex-col gap-0">
+            {/* Month row */}
+            <div className="flex gap-[3px] mb-1 h-4">
+              {weeks.map((_, wi) => {
+                const ml = monthLabels.find(m => m.col === wi);
+                return (
+                  <div key={wi} className="w-3 flex items-center">
+                    {ml && <span className="text-[9px] text-muted-foreground whitespace-nowrap">{ml.label}</span>}
+                  </div>
+                );
+              })}
+            </div>
+            {/* Cells grid — render day-by-day */}
+            <div className="flex gap-[3px]">
+              {weeks.map((week, wi) => (
+                <div key={wi} className="flex flex-col gap-[3px]">
+                  {Array.from({ length: 7 }, (_, di) => {
+                    const cell = week[di];
+                    return cell ? (
+                      <HeatmapCell key={di} count={cell.count} date={cell.date} />
+                    ) : (
+                      <div key={di} className="h-3 w-3" />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-[10px] text-muted-foreground">Less</span>
+        {['bg-muted', 'bg-primary/25', 'bg-primary/55', 'bg-primary'].map((c, i) => (
+          <div key={i} className={`h-3 w-3 rounded-sm ${c}`} />
+        ))}
+        <span className="text-[10px] text-muted-foreground">More</span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Playlist Card ─────────────────────────────────────────────────────────────
+function PlaylistCard({ playlist, index }: { playlist: Playlist; index: number }) {
+  const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length];
+  const videoCount = Array.isArray(playlist.videos) ? playlist.videos.length : 0;
+  const initial = playlist.title.slice(0, 2).toUpperCase();
+
+  return (
+    <Link href={`/playlist/${playlist.id}`}>
+      <div className="group cursor-pointer rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl hover:shadow-xl hover:border-primary/40 transition-all duration-300 overflow-hidden h-full flex flex-col">
+        {/* Gradient banner */}
+        <div className={`bg-gradient-to-br ${gradient} h-28 flex items-center justify-center relative border-b border-zinc-200 dark:border-white/10`}>
+          <span className="text-4xl font-medium text-black/10 dark:text-white/10 select-none absolute inset-0 flex items-center justify-center tracking-widest">
+            {initial}
+          </span>
+          <div className="relative z-10 h-12 w-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+            <BookOpen className="h-6 w-6 text-white" />
+          </div>
+          {/* video count badge */}
+          <div className="absolute top-3 right-3 bg-black/30 backdrop-blur-sm text-white text-[10px] font-semibold px-2 py-0.5 rounded-full">
+            {videoCount} videos
+          </div>
+        </div>
+
+        {/* Info */}
+        <div className="p-4 flex flex-col flex-1 gap-2">
+          <h3 className="font-medium text-sm line-clamp-2 group-hover:text-zinc-600 dark:group-hover:text-zinc-300 transition-colors leading-snug">
+            {playlist.title}
+          </h3>
+          {playlist.description && (
+            <p className="text-xs text-muted-foreground line-clamp-2 flex-1">{playlist.description}</p>
+          )}
+          <div className="flex items-center justify-between mt-auto pt-2 border-t">
+            <span className="text-[10px] text-muted-foreground">
+              {new Date(playlist.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// ─── Nav ──────────────────────────────────────────────────────────────────────
+const NAV_LINKS = ['Dashboard', 'Playlists', 'Interviews', 'History'] as const;
+type Section = 'playlists' | 'interviews' | 'history';
+
+function navToSection(nav: string): Section | null {
+  if (nav === 'Playlists') return 'playlists';
+  if (nav === 'Interviews') return 'interviews';
+  if (nav === 'History') return 'history';
+  return null;
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
   const [refreshInterviews, setRefreshInterviews] = useState(false);
-  // All state should be initialized empty, to be filled with dynamic data from API
+  const [activeNav, setActiveNav] = useState<string>('Dashboard');
+  const [activeSection, setActiveSection] = useState<Section>('playlists');
+
   const [stats, setStats] = useState<Stats>({
-    totalPlaylists: 0,
-    totalVideos: 0,
-    completedVideos: 0,
-    totalWatchTime: 0,
-    totalInterviews: 0,
+    totalPlaylists: 0, totalVideos: 0, completedVideos: 0,
+    totalWatchTime: 0, totalInterviews: 0,
   });
   const [recentPlaylists, setRecentPlaylists] = useState<Playlist[]>([]);
-  const [searchHistory, setSearchHistory] = useState<SearchHistoryItem[]>([]);
   const [watchHistory, setWatchHistory] = useState<WatchHistory[]>([]);
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [badges, setBadges] = useState<Badge[]>([]);
+  const [streakData, setStreakData] = useState<StreakData>({
+    currentStreak: 0, longestStreak: 0, totalDays: 0, activity: [],
+  });
   const [playlistsLoading, setPlaylistsLoading] = useState(false);
-  const [playlistsError, setPlaylistsError] = useState<string | null>(null);
   const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState<string | null>(null);
 
   const { data: session, status: sessionStatus } = useSession();
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+  useEffect(() => { setIsMounted(true); }, []);
 
   useEffect(() => {
     if (sessionStatus === 'authenticated') {
-      loadPlaylistHistory();
-      loadWatchHistory();
+      loadPlaylists();
+      loadHistory();
       loadInterviewStats();
+      loadStreak();
     }
   }, [sessionStatus, refreshInterviews]);
 
-  const loadPlaylistHistory = async () => {
+  const loadPlaylists = async () => {
     try {
       setPlaylistsLoading(true);
-      setPlaylistsError(null);
-      
-      const response = await fetch('/api/user/playlists', {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch playlists');
-      }
-
-      const playlists = await response.json();
-      setRecentPlaylists(playlists);
-      
-      // Update stats based on playlist count
-      // Calculate total videos as playlists * 20 (since each playlist generates ~20 videos from YouTube API)
+      const res = await fetch('/api/user/playlists', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      setRecentPlaylists(data);
       setStats(prev => ({
         ...prev,
-        totalPlaylists: playlists.length,
-        totalVideos: playlists.length * 20
+        totalPlaylists: data.length,
+        totalVideos: data.reduce((s: number, p: Playlist) => s + (p.videos?.length || 0), 0),
       }));
-    } catch (error) {
-      console.error('Failed to load playlist history:', error);
-      setPlaylistsError('Failed to load playlists');
-    } finally {
-      setPlaylistsLoading(false);
-    }
+    } finally { setPlaylistsLoading(false); }
   };
 
-  const loadWatchHistory = async () => {
+  const loadHistory = async () => {
     try {
       setHistoryLoading(true);
-      setHistoryError(null);
-      
-      const response = await fetch('/api/history', {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch watch history');
-      }
-
-      const data = await response.json();
-      setWatchHistory(data.history || []);
-      
-      // Update stats based on history - only update completed count
-      const completedCount = (data.history || []).filter((h: WatchHistory) => h.completed).length;
-      setStats(prev => ({
-        ...prev,
-        completedVideos: completedCount
-      }));
-    } catch (error) {
-      console.error('Failed to load watch history:', error);
-      setHistoryError('Failed to load history');
-    } finally {
-      setHistoryLoading(false);
-    }
+      const res = await fetch('/api/history', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const history: WatchHistory[] = data.history || [];
+      setWatchHistory(history);
+      const completedCount = history.filter(h => h.completed).length;
+      const totalWatchTime = history.reduce((s, h) => s + (h.watchTime ?? 0), 0);
+      setStats(prev => ({ ...prev, completedVideos: completedCount, totalWatchTime }));
+    } finally { setHistoryLoading(false); }
   };
 
   const loadInterviewStats = async () => {
     try {
-      const response = await fetch('/api/interview/list', {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch interviews');
-      }
-
-      const data = await response.json();
+      const res = await fetch('/api/interview/list', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
       if (data.success && Array.isArray(data.result)) {
-        setStats(prev => ({
-          ...prev,
-          totalInterviews: data.result.length
-        }));
+        setStats(prev => ({ ...prev, totalInterviews: data.result.length }));
       }
-    } catch (error) {
-      console.error('Failed to load interview stats:', error);
-    }
+    } catch { /* silent */ }
   };
 
-  // const loadDashboardData = async () => {
-  //   // Fetch stats, search history, badges, etc. from your API here
-  // };
+  const loadStreak = async () => {
+    try {
+      const res = await fetch('/api/dashboard/streak', { credentials: 'include' });
+      if (!res.ok) return;
+      const d = await res.json();
+      setStreakData({
+        currentStreak: d.currentStreak ?? 0,
+        longestStreak: d.longestStreak ?? 0,
+        totalDays: d.totalDays ?? 0,
+        activity: d.activity ?? [],
+      });
+    } catch { /* silent */ }
+  };
 
-  const completionPercentage =
-    stats.totalVideos > 0 ? (stats.completedVideos / stats.totalVideos) * 100 : 0;
+  // weekly bar chart data
+  const weeklyActivity = useMemo(() => {
+    const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const now = new Date();
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(now.getDate() - (6 - i));
+      const dateStr = d.toISOString().slice(0, 10);
+      return {
+        day: DAYS[d.getDay()],
+        value: watchHistory.filter(h => h.viewedAt?.slice(0, 10) === dateStr).length,
+      };
+    });
+  }, [watchHistory]);
+
+  const completionPct = stats.totalVideos > 0
+    ? Math.round((stats.completedVideos / stats.totalVideos) * 100) : 0;
+
+  const donutData = [
+    { name: 'Completed', value: stats.completedVideos || 0 },
+    { name: 'Remaining', value: Math.max(0, stats.totalVideos - stats.completedVideos) },
+  ];
+
+  function handleNav(nav: string) {
+    setActiveNav(nav);
+    const s = navToSection(nav);
+    if (s) setActiveSection(s);
+  }
+
+  function handleSectionTab(s: Section) {
+    setActiveSection(s);
+    const navName = s === 'playlists' ? 'Playlists' : s === 'interviews' ? 'Interviews' : 'History';
+    setActiveNav(navName);
+  }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-              <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <h1 className="text-xl font-bold">NeuroLearn</h1>
-            </Link>
+    <div className="min-h-screen bg-zinc-50 dark:bg-[#09090b] flex flex-col relative z-10 overflow-hidden">
+      {/* Subtle Background glow effects for glassmorphism */}
+      <div className="pointer-events-none absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-zinc-200/50 dark:bg-zinc-800/50 rounded-full blur-[140px]" />
+      <div className="pointer-events-none absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] bg-zinc-300/30 dark:bg-zinc-700/30 rounded-full blur-[120px]" />
 
-            <div className="flex items-center gap-4">
-              {isMounted && (
-                <>
-                  {sessionStatus === 'authenticated' ? (
-                    <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })}>
-                      Logout
-                    </Button>
-                  ) : (
-                    <Button variant="ghost" size="sm" onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}>
-                      Login
-                    </Button>
-                  )}
-                </>
-              )}
-              <ThemeToggle />
+      {/* ── NAV ─────────────────────────────────────────────────── */}
+      <header className="border-b border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-2xl sticky top-0 z-50">
+        <div className="px-6 py-3 flex items-center gap-4">
+          <Link href="/" className="flex items-center gap-2 shrink-0 hover:opacity-80 transition-opacity">
+            <div className="h-8 w-8 bg-primary rounded-lg flex items-center justify-center">
+              <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
+            <span className="text-lg font-bold">NeuroLearn</span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-1 ml-4">
+            {NAV_LINKS.map(nav => (
+              <button
+                key={nav}
+                onClick={() => handleNav(nav)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  activeNav === nav
+                    ? 'bg-foreground text-background'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
+              >
+                {nav}
+              </button>
+            ))}
+          </nav>
+
+          <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
+            <button className="h-8 w-8 rounded-full border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+              <Bell className="h-4 w-4" />
+            </button>
+            {isMounted && sessionStatus === 'authenticated' && (
+              <button
+                onClick={() => signOut({ callbackUrl: '/' })}
+                title="Sign out"
+                className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-sm font-bold uppercase"
+              >
+                {session?.user?.name?.[0] ?? 'U'}
+              </button>
+            )}
+            {isMounted && sessionStatus !== 'authenticated' && sessionStatus !== 'loading' && (
+              <Button size="sm" onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}>Login</Button>
+            )}
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
-        {sessionStatus === 'loading' && (
-          <div className="flex items-center justify-center min-h-screen">
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-        )}
+      {/* ── BODY ────────────────────────────────────────────────── */}
+      <div className="flex flex-1 overflow-hidden">
 
-        {sessionStatus === 'unauthenticated' && (
-          <div className="max-w-md mx-auto">
-            <Card>
-              <CardContent className="p-6">
-                <h2 className="text-2xl font-bold mb-2">Welcome</h2>
-                <p className="text-muted-foreground mb-4">Sign in to view your learning dashboard.</p>
-                <Button onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })} className="w-full">Sign in</Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {/* ── MAIN ────────────────────────────────────────────── */}
+        <main className="flex-1 overflow-y-auto px-6 py-6 min-w-0">
 
-        {isMounted && sessionStatus === 'authenticated' && (
-          <div className="max-w-6xl mx-auto">
-            {/* Welcome Section */}
-            <div className="mb-8">
-              <h2 className="text-3xl font-bold mb-2">Welcome back, {session?.user?.name || 'Learner'}!</h2>
-              <p className="text-muted-foreground">Continue your learning journey</p>
+          {sessionStatus === 'loading' && (
+            <div className="flex items-center justify-center h-64">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-r-transparent" />
             </div>
+          )}
 
-            {/* Stats Grid - Enhanced Style */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border border-blue-200 dark:border-blue-800 shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-blue-700 dark:text-blue-300">Playlists Created</p>
-                      <p className="text-4xl font-bold mt-2 text-blue-900 dark:text-blue-100">{stats.totalPlaylists}</p>
-                    </div>
-                    <BookOpen className="h-12 w-12 text-blue-300 dark:text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border border-green-200 dark:border-green-800 shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-green-700 dark:text-green-300">Videos Completed</p>
-                      <p className="text-4xl font-bold mt-2 text-green-900 dark:text-green-100">{stats.completedVideos}</p>
-                      <p className="text-xs text-green-600 dark:text-green-400 mt-1">of {stats.totalVideos}</p>
-                    </div>
-                    <Play className="h-12 w-12 text-green-300 dark:text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border border-purple-200 dark:border-purple-800 shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-purple-700 dark:text-purple-300">Watch Time</p>
-                      <p className="text-4xl font-bold mt-2 text-purple-900 dark:text-purple-100">{Math.round(stats.totalWatchTime / 60)}h</p>
-                    </div>
-                    <Clock className="h-12 w-12 text-purple-300 dark:text-purple-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900 border border-orange-200 dark:border-orange-800 shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-orange-700 dark:text-orange-300">Completion Rate</p>
-                      <p className="text-4xl font-bold mt-2 text-orange-900 dark:text-orange-100">{Math.round(completionPercentage)}%</p>
-                    </div>
-                    <TrendingUp className="h-12 w-12 text-orange-300 dark:text-orange-600" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border border-red-200 dark:border-red-800 shadow-md hover:shadow-lg transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-red-700 dark:text-red-300">Mock Interviews</p>
-                      <p className="text-4xl font-bold mt-2 text-red-900 dark:text-red-100">{stats.totalInterviews || 0}</p>
-                    </div>
-                    <Briefcase className="h-12 w-12 text-red-300 dark:text-red-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Content Tabs */}
-            <Tabs defaultValue="playlists" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="playlists" className="text-base">Your Playlists</TabsTrigger>
-                <TabsTrigger value="interviews" className="text-base">Interviews</TabsTrigger>
-                <TabsTrigger value="history" className="text-base">History</TabsTrigger>
-              </TabsList>
-
-              {/* Playlists Tab */}
-              <TabsContent value="playlists" className="space-y-4">
-                {playlistsLoading ? (
-                  <Card>
-                    <CardContent className="p-12 flex items-center justify-center">
-                      <p className="text-muted-foreground">Loading playlists...</p>
-                    </CardContent>
-                  </Card>
-                ) : playlistsError ? (
-                  <Card className="border-destructive/50">
-                    <CardContent className="p-6">
-                      <p className="text-destructive font-medium">{playlistsError}</p>
-                    </CardContent>
-                  </Card>
-                ) : recentPlaylists.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-12 text-center">
-                      <BookOpen className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                      <p className="text-muted-foreground">No playlists yet</p>
-                      <p className="text-sm text-muted-foreground mt-1">Create one by searching for a topic on the home page</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {recentPlaylists.map((playlist) => (
-                      <Link key={playlist.id} href={`/playlist/${playlist.id}`}>
-                        <Card className="cursor-pointer border border-border shadow-sm hover:shadow-lg hover:border-primary transition-all duration-300 h-full">
-                          <CardContent className="p-6">
-                            <div className="flex flex-col gap-4">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-base truncate text-foreground hover:text-primary transition-colors">{playlist.title}</h3>
-                                {playlist.description && (
-                                  <p className="text-sm text-muted-foreground line-clamp-2 mt-2">{playlist.description}</p>
-                                )}
-                              </div>
-                              <div className="flex items-center justify-between pt-4 border-t">
-                                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
-                                    <Play className="h-3 w-3" />
-                                    {Array.isArray(playlist.videos) ? playlist.videos.length : 0}
-                                  </span>
-                                  <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                                    <Clock className="h-3 w-3" />
-                                    {new Date(playlist.createdAt).toLocaleDateString()}
-                                  </span>
-                                </div>
-                                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* Interviews Tab */}
-              <TabsContent value="interviews" className="space-y-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold">Your Mock Interviews</h3>
-                  <AddInterview onSuccess={() => setRefreshInterviews(!refreshInterviews)} />
+          {isMounted && sessionStatus !== 'loading' && (
+            <>
+              {/* ── HERO BANNER ────────────────────────────────── */}
+              <div className="mb-8 relative overflow-hidden bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-[2rem] p-8 sm:p-10 shadow-xl">
+                <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
+                  <GraduationCap className="w-48 h-48" />
                 </div>
-                <InterviewList isLoading={false} error={null} onRefresh={() => setRefreshInterviews(!refreshInterviews)} />
-              </TabsContent>
+                <div className="relative z-10">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/60 dark:bg-black/40 border border-black/5 dark:border-white/5 text-xs font-medium mb-4 backdrop-blur-md">
+                    <span className="flex h-2 w-2 rounded-full bg-zinc-500 animate-pulse" />
+                    Live Learning Dashboard
+                  </div>
+                  <h1 className="text-3xl sm:text-5xl font-semibold tracking-tight mb-3 text-zinc-900 dark:text-white">
+                    Welcome back, <span>{session?.user?.name?.split(' ')[0] ?? 'Learner'}</span>
+                  </h1>
+                  <p className="text-muted-foreground text-base sm:text-lg max-w-2xl">
+                    You're making great progress. Jump right back into your playlists or start a new mock interview to test your knowledge.
+                  </p>
+                </div>
+              </div>
 
-              {/* History Tab */}
-              <TabsContent value="history" className="space-y-4">
-                {historyLoading ? (
-                  <Card>
-                    <CardContent className="p-12 flex items-center justify-center">
-                      <p className="text-muted-foreground">Loading watch history...</p>
-                    </CardContent>
-                  </Card>
-                ) : historyError ? (
-                  <Card className="border-destructive/50">
-                    <CardContent className="p-6">
-                      <p className="text-destructive font-medium">{historyError}</p>
-                    </CardContent>
-                  </Card>
-                ) : watchHistory.length === 0 ? (
-                  <Card>
-                    <CardContent className="p-12 text-center">
-                      <History className="h-12 w-12 mx-auto mb-4 opacity-30" />
-                      <p className="text-muted-foreground">No watch history yet</p>
-                      <p className="text-sm text-muted-foreground mt-1">Start watching videos to build your history</p>
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <div className="space-y-3">
-                    {watchHistory.map((item) => (
-                      <Link key={item.id} href={`/watch?v=${item.video.youtubeId}`}>
-                        <Card className="cursor-pointer border border-border shadow-sm hover:shadow-lg hover:border-primary transition-all duration-300">
-                          <CardContent className="p-5">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                  <h3 className="font-semibold text-base truncate text-foreground hover:text-primary transition-colors">{item.video.title}</h3>
-                                  {item.completed && (
-                                    <span className="flex-shrink-0 px-3 py-1 rounded-full bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold border border-green-300 dark:border-green-700">
-                                      ✓ Completed
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-6 mt-3 text-xs text-muted-foreground">
-                                  <span className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
-                                    <Clock className="h-3 w-3" />
-                                    {new Date(item.viewedAt).toLocaleDateString()}
-                                  </span>
-                                  {item.watchTime && (
-                                    <span className="flex items-center gap-1 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
-                                      <Play className="h-3 w-3" />
-                                      {item.watchTime} sec
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex-shrink-0">
-                                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+              {/* ── ROW 1: ANALYTICS | COMPLETION | HEATMAP ────── */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+
+                {/* Bar chart */}
+                <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
+                  <CardHeader className="pb-2 flex flex-row items-start justify-between">
+                    <div>
+                      <CardTitle className="text-base font-medium flex items-center gap-2">
+                        <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                          <BarChart2 className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
+                        </div>
+                        Analytics
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">Daily videos watched — last 7 days</p>
+                    </div>
+                    <span className="text-[10px] border rounded px-2 py-0.5 text-muted-foreground">Week</span>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex items-baseline gap-1 mb-3">
+                      <span className="text-3xl font-bold">{Math.round(stats.totalWatchTime / 60)}</span>
+                      <span className="text-sm text-muted-foreground">hrs total</span>
+                    </div>
+                    <div className="flex gap-4 mb-2">
+                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <span className="h-2 w-2 rounded-full bg-primary inline-block" /> Watched
+                      </span>
+                    </div>
+                    <ResponsiveContainer width="100%" height={110}>
+                      <BarChart data={weeklyActivity} barSize={14}>
+                        <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+                        <YAxis hide allowDecimals={false} />
+                        <Tooltip
+                          cursor={false}
+                          contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
+                          formatter={(v: any) => [`${v} video${v !== 1 ? 's' : ''}`, '']}
+                        />
+                        <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Donut completion */}
+                <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                        <Target className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
+                      </div>
+                      Completion
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">Overall progress</p>
+                  </CardHeader>
+                  <CardContent className="flex flex-col items-center pt-0 gap-3">
+                    <div className="relative">
+                      <ResponsiveContainer width={150} height={150}>
+                        <PieChart>
+                          <Pie
+                            data={donutData}
+                            cx="50%" cy="50%"
+                            innerRadius={46} outerRadius={68}
+                            startAngle={90} endAngle={-270}
+                            dataKey="value" strokeWidth={0}
+                          >
+                            <Cell fill="hsl(var(--primary))" />
+                            <Cell fill="hsl(var(--muted))" />
+                          </Pie>
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-2xl font-bold">{completionPct}%</span>
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-wide">done</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 w-full mt-2">
+                      <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-3 text-center backdrop-blur-sm">
+                        <p className="text-2xl font-semibold text-zinc-800 dark:text-zinc-200">{stats.completedVideos}</p>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">Completed</p>
+                      </div>
+                      <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-3 text-center backdrop-blur-sm">
+                        <p className="text-2xl font-semibold text-zinc-700 dark:text-zinc-300">{stats.totalVideos}</p>
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">Total</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* LeetCode heatmap */}
+                <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium flex items-center gap-2">
+                      <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                        <Flame className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
+                      </div>
+                      Learning Activity
+                    </CardTitle>
+                    <p className="text-xs text-muted-foreground">Videos completed per day</p>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {streakData.activity.length > 0 ? (
+                      <LeetCodeHeatmap {...streakData} />
+                    ) : (
+                      <div className="h-32 flex items-center justify-center text-xs text-muted-foreground">
+                        No activity yet — start watching!
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* ── ROW 2: SECTION CONTENT ──────────────────────── */}
+              <div>
+                {/* Section header + tab switcher */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold">
+                      {activeSection === 'playlists' && 'Your Playlists'}
+                      {activeSection === 'interviews' && 'Mock Interviews'}
+                      {activeSection === 'history' && 'Watch History'}
+                    </h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {activeSection === 'playlists' && `${stats.totalPlaylists} playlists created`}
+                      {activeSection === 'interviews' && `${stats.totalInterviews} interviews total`}
+                      {activeSection === 'history' && `${watchHistory.length} videos watched`}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex p-1 gap-0.5 bg-muted rounded-lg">
+                      {(['playlists', 'interviews', 'history'] as Section[]).map(s => (
+                        <button
+                          key={s}
+                          onClick={() => handleSectionTab(s)}
+                          className={`px-3 py-1.5 rounded-md text-xs font-medium capitalize transition-all ${
+                            activeSection === s
+                              ? 'bg-background text-foreground shadow-sm'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                    {activeSection === 'interviews' && (
+                      <AddInterview onSuccess={() => setRefreshInterviews(r => !r)} />
+                    )}
+                  </div>
+                </div>
+
+                {/* Playlists */}
+                {activeSection === 'playlists' && (
+                  playlistsLoading ? (
+                    <div className="flex items-center justify-center h-48">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                    </div>
+                  ) : recentPlaylists.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-zinc-200 dark:border-white/10 bg-white/30 dark:bg-zinc-900/30 backdrop-blur-sm rounded-[2rem] gap-2">
+                      <BookOpen className="h-10 w-10 text-muted-foreground/30" />
+                      <p className="text-sm text-muted-foreground font-medium">No playlists yet</p>
+                      <p className="text-xs text-muted-foreground">Search a topic on the home page to create one</p>
+                      <Link href="/">
+                        <Button size="sm" variant="outline" className="mt-2 gap-1">
+                          <Plus className="h-3 w-3" /> Create Playlist
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {recentPlaylists.map((playlist, i) => (
+                        <PlaylistCard key={playlist.id} playlist={playlist} index={i} />
+                      ))}
+                    </div>
+                  )
+                )}
+
+                {/* Interviews */}
+                {activeSection === 'interviews' && (
+                  <InterviewList
+                    isLoading={false}
+                    error={null}
+                    onRefresh={() => setRefreshInterviews(r => !r)}
+                  />
+                )}
+
+                {/* History */}
+                {activeSection === 'history' && (
+                  historyLoading ? (
+                    <div className="flex items-center justify-center h-48">
+                      <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                    </div>
+                  ) : watchHistory.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-zinc-200 dark:border-white/10 bg-white/30 dark:bg-zinc-900/30 backdrop-blur-sm rounded-[2rem] gap-2">
+                      <History className="h-10 w-10 text-muted-foreground/30" />
+                      <p className="text-sm text-muted-foreground font-medium">No watch history yet</p>
+                      <p className="text-xs text-muted-foreground">Start watching videos to build your history</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {watchHistory.map(item => (
+                        <Link key={item.id} href={`/watch?v=${item.video.youtubeId}`}>
+                          <div className="group flex items-center gap-4 px-4 py-3 rounded-2xl border border-zinc-200 dark:border-white/10 bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl hover:border-primary/40 hover:shadow-md transition-all cursor-pointer">
+                            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                              <Play className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate group-hover:text-primary transition-colors">
+                                {item.video.title}
+                              </p>
+                              <div className="flex items-center gap-3 mt-0.5">
+                                <span className="text-[10px] text-muted-foreground">
+                                  {new Date(item.viewedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                </span>
+                                {item.watchTime ? (
+                                  <span className="text-[10px] text-muted-foreground">{item.watchTime}s</span>
+                                ) : null}
                               </div>
                             </div>
-                          </CardContent>
-                        </Card>
-                      </Link>
-                    ))}
-                  </div>
+                            {item.completed ? (
+                              <div className="flex items-center gap-1 shrink-0">
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                <span className="text-[10px] text-green-600 font-medium hidden sm:block">Done</span>
+                              </div>
+                            ) : (
+                              <Circle className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                            )}
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )
                 )}
-              </TabsContent>
-            </Tabs>
+              </div>
+            </>
+          )}
+        </main>
+
+        {/* ── RIGHT SIDEBAR ───────────────────────────────────── */}
+        <aside className="hidden xl:flex flex-col w-64 shrink-0 border-l border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-2xl overflow-y-auto relative z-20">
+
+          {/* User profile mini */}
+          <div className="p-5 border-b">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-zinc-900 dark:bg-white flex items-center justify-center text-white dark:text-zinc-900 font-medium text-sm shrink-0">
+                {isMounted ? (session?.user?.name?.[0]?.toUpperCase() ?? 'U') : 'U'}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{isMounted ? (session?.user?.name ?? 'Learner') : 'Learner'}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{isMounted ? (session?.user?.email ?? '') : ''}</p>
+              </div>
+            </div>
           </div>
-        )}
-      </main>
+
+          {/* Stats — clean list */}
+          <div className="p-5 border-b space-y-1">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest mb-3">Overview</p>
+            {[
+              { icon: BookOpen, label: 'Playlists', value: stats.totalPlaylists },
+              { icon: Play, label: 'Videos total', value: stats.totalVideos },
+              { icon: CheckCircle2, label: 'Completed', value: stats.completedVideos },
+              { icon: Clock, label: 'Watch time', value: `${Math.round(stats.totalWatchTime / 60)}h` },
+              { icon: Briefcase, label: 'Interviews', value: stats.totalInterviews },
+            ].map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-center gap-3 py-2 px-3 rounded-xl hover:bg-muted/60 transition-colors">
+                <div className={`h-8 w-8 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0`}>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">{label}</p>
+                </div>
+                <span className="text-sm font-medium tabular-nums">{value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Recent activity */}
+          <div className="p-5 flex-1 min-h-0">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+              Recent Activity
+            </p>
+            {watchHistory.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center mt-8">No activity yet</p>
+            ) : (
+              <div className="space-y-2">
+                {watchHistory.slice(0, 7).map(item => (
+                  <Link key={item.id} href={`/watch?v=${item.video.youtubeId}`}>
+                    <div className="group flex items-start gap-2.5 py-2 px-2 rounded-lg hover:bg-muted/60 transition-colors cursor-pointer">
+                      <div className={`mt-0.5 h-2 w-2 rounded-full shrink-0 ${item.completed ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-medium line-clamp-2 group-hover:text-primary transition-colors leading-snug">
+                          {item.video.title}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                          {new Date(item.viewedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* CTA */}
+          <div className="p-4 border-t">
+            <Link href="/">
+              <Button variant="default" size="sm" className="w-full gap-2">
+                <Plus className="h-3.5 w-3.5" />
+                New Playlist
+              </Button>
+            </Link>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

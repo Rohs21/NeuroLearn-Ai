@@ -1,3 +1,8 @@
+interface Window {
+  YT: any;
+  onYouTubeIframeAPIReady: () => void;
+}
+
 // CSS imports for Next.js
 declare module '*.css' {
   const content: any;

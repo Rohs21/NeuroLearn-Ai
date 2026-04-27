@@ -60,41 +60,53 @@ const Feedback: React.FC<FeedbackProps> = ({ params }) => {
         </h2>
       ) : (
         <>
-          <h2 className="text-2xl sm:text-3xl font-bold text-green-500">Congratulation!</h2>
-          <h2 className="font-bold text-xl sm:text-2xl">Here is your interview feedback</h2>
-          <h2 className="text-xs sm:text-sm text-gray-500">
-            Find below interview question with correct answer, your answer, and feedback for improvement
-          </h2>
+          <div className="mb-8 sm:mb-10 text-center sm:text-left">
+            <h2 className="text-3xl sm:text-4xl font-bold text-zinc-900 dark:text-white tracking-tight mb-2">Interview Complete</h2>
+            <p className="text-zinc-500 dark:text-zinc-400 text-sm sm:text-base">
+              Here is your detailed feedback report with AI ratings and improvement areas.
+            </p>
+          </div>
           {feedbackList.map((item, index) => (
             <Collapsible key={index} className="mt-4 sm:mt-7">
-              <CollapsibleTrigger className="p-2 sm:p-3 bg-secondary rounded-lg flex justify-between my-2 text-left gap-3 sm:gap-7 w-full text-sm sm:text-base">
+              <CollapsibleTrigger className="p-4 sm:p-5 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-2xl flex justify-between my-2 text-left gap-4 sm:gap-6 w-full text-sm sm:text-base font-medium text-zinc-900 dark:text-white shadow-sm hover:border-zinc-300 dark:hover:border-white/20 transition-all">
                 <span className="line-clamp-2 sm:line-clamp-none">{item.question}</span>
-                <ChevronsUpDown className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+                <ChevronsUpDown className="h-5 w-5 flex-shrink-0 text-zinc-400 dark:text-zinc-500" />
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-red-500 p-2 border rounded-lg text-sm sm:text-base">
-                    <strong>Rating:</strong> {item.rating || 'Not rated'}
-                  </h2>
-                  <h2 className="p-2 border rounded-lg bg-red-50 text-xs sm:text-sm text-red-900">
-                    <strong>Your Answer: </strong>
-                    {item.userAns || 'No answer provided'}
-                  </h2>
-                  <h2 className="p-2 border rounded-lg bg-green-50 text-xs sm:text-sm text-green-900">
-                    <strong>Correct Answer: </strong>
-                    {item.correctAns || 'No correct answer available'}
-                  </h2>
-                  <h2 className="p-2 border rounded-lg bg-blue-50 text-xs sm:text-sm text-primary">
-                    <strong>Feedback: </strong>
-                    {item.feedback || 'No feedback available'}
-                  </h2>
+                <div className="flex flex-col gap-3 mt-3">
+                  <div className="p-4 border border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-50 dark:bg-zinc-800/30">
+                    <h2 className="text-sm sm:text-base text-zinc-900 dark:text-white font-medium mb-1 uppercase tracking-wider text-xs">Rating</h2>
+                    <p className="text-lg font-semibold text-zinc-900 dark:text-white">{item.rating || 'Not rated'}</p>
+                  </div>
+                  
+                  <div className="p-4 border border-zinc-200 dark:border-white/10 rounded-2xl bg-white dark:bg-zinc-900">
+                    <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Your Answer</h2>
+                    <p className="text-sm sm:text-base text-zinc-700 dark:text-zinc-300 leading-relaxed">{item.userAns || 'No answer provided'}</p>
+                  </div>
+                  
+                  <div className="p-4 border border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50">
+                    <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">Expected Answer</h2>
+                    <p className="text-sm sm:text-base text-zinc-900 dark:text-white leading-relaxed">{item.correctAns || 'No correct answer available'}</p>
+                  </div>
+                  
+                  <div className="p-4 border border-zinc-200 dark:border-white/10 rounded-2xl bg-zinc-100 dark:bg-zinc-800">
+                    <h2 className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">AI Feedback</h2>
+                    <p className="text-sm sm:text-base text-zinc-800 dark:text-zinc-200 leading-relaxed">{item.feedback || 'No feedback available'}</p>
+                  </div>
                 </div>
               </CollapsibleContent>
             </Collapsible>
           ))}
         </>
       )}
-      <Button onClick={handleGoHome}>Go Home</Button>
+      <div className="mt-8 sm:mt-12">
+        <Button 
+          onClick={handleGoHome}
+          className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 font-medium px-8 py-2.5 rounded-xl shadow-md"
+        >
+          Return to Dashboard
+        </Button>
+      </div>
     </div>
   );
 };

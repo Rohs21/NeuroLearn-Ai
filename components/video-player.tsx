@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CheckCircle2, BookOpen, Brain, FileText } from 'lucide-react';
+import { CheckCircle2, BookOpen, Brain, FileText, Save } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface VideoPlayerProps {
   videoId: string;
@@ -15,8 +16,10 @@ interface VideoPlayerProps {
   description: string;
   channelTitle: string;
   difficulty: string;
+  playlistId?: string;
   onComplete?: () => void;
   onNext?: () => void;
+  onVideoCompleted?: (videoId: string) => void;
 }
 
 interface QuizQuestion {
@@ -26,25 +29,100 @@ interface QuizQuestion {
   explanation: string;
 }
 
-export function VideoPlayer({ 
-  videoId, 
-  title, 
-  description, 
-  channelTitle, 
+interface Flashcard {
+  front: string;
+  back: string;
+}
+
+export function VideoPlayer({
+  videoId,
+  title,
+  description,
+  channelTitle,
   difficulty,
+  playlistId,
   onComplete,
-  onNext
+  onNext,
+  onVideoCompleted,
 }: VideoPlayerProps) {
-  const { data: session } = useSession() as { data: { user: { id: string } } | null };
+  const { data: session } = useSession() as { data: { user: { id: string; email?: string } } | null };
+  const playerRef = useRef<any>(null);
+  const playerInitialized = useRef(false);
+
   const [summary, setSummary] = useState<string>('');
   const [quiz, setQuiz] = useState<QuizQuestion[]>([]);
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+  const [flippedCards, setFlippedCards] = useState<Set<number>>(new Set());
   const [selectedAnswers, setSelectedAnswers] = useState<{ [key: number]: number }>({});
   const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [quizScore, setQuizScore] = useState<number | null>(null);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [notes, setNotes] = useState('');
+  const [notesSaved, setNotesSaved] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
+  // Load AI content + notes on video change
   useEffect(() => {
+    setSummary('');
+    setQuiz([]);
+    setFlashcards([]);
+    setFlippedCards(new Set());
+    setSelectedAnswers({});
+    setQuizSubmitted(false);
+    setQuizScore(null);
+    setNotes('');
+    setCompleted(false);
     loadAIContent();
+    loadNotes();
+  }, [videoId]);
+
+  // Auto-save notes with 1.5s debounce
+  useEffect(() => {
+    if (!notes) return;
+    setNotesSaved(false);
+    const timer = setTimeout(() => saveNotes(), 1500);
+    return () => clearTimeout(timer);
+  }, [notes]);
+
+  // YouTube IFrame API
+  useEffect(() => {
+    playerInitialized.current = false;
+
+    const initPlayer = () => {
+      if (playerInitialized.current) return;
+      playerInitialized.current = true;
+      if (playerRef.current?.destroy) playerRef.current.destroy();
+      playerRef.current = new window.YT.Player(`yt-player-${videoId}`, {
+        height: '100%',
+        width: '100%',
+        videoId,
+        playerVars: { rel: 0, modestbranding: 1 },
+        events: {
+          onStateChange: (event: any) => {
+            if (event.data === 0) handleComplete(); // video ended
+          },
+        },
+      });
+    };
+
+    if (window.YT?.Player) {
+      initPlayer();
+    } else {
+      window.onYouTubeIframeAPIReady = initPlayer;
+      if (!document.querySelector('script[src*="youtube.com/iframe_api"]')) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+    }
+
+    return () => {
+      if (playerRef.current?.destroy) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+        playerInitialized.current = false;
+      }
+    };
   }, [videoId]);
 
   const loadAIContent = async () => {
@@ -54,13 +132,13 @@ export function VideoPlayer({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({ title, description, videoId }),
       });
-
       if (response.ok) {
         const data = await response.json();
         setSummary(data.summary || 'Summary unavailable.');
         setQuiz(data.quiz || []);
+        setFlashcards(data.flashcards || []);
       }
     } catch (error) {
       console.error('Failed to load AI content:', error);
@@ -69,241 +147,365 @@ export function VideoPlayer({
     }
   };
 
-  // Add handler to save history when completed
-  const handleComplete = async () => {
-    if (!session?.user?.id) {
-      console.error('User not authenticated');
-      return;
-    }
-
+  const loadNotes = async () => {
+    if (!session?.user?.id) return;
     try {
-      // Save completion history
-      const historyResponse = await fetch('/api/history', {
+      const res = await fetch(`/api/notes?videoId=${videoId}`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setNotes(data.content ?? '');
+      }
+    } catch {}
+  };
+
+  const saveNotes = async () => {
+    if (!session?.user?.id) return;
+    try {
+      await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({
-          videoId,
-          watchTime: 0, // You can pass actual watch time if tracked
-          completed: true,
-        }),
+        body: JSON.stringify({ youtubeId: videoId, content: notes }),
       });
+      setNotesSaved(true);
+    } catch {}
+  };
 
-      // Award blockchain badge for first video completion
-      if (historyResponse.ok) {
-        try {
-          await fetch('/api/badge/award', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({
-              userId: session.user.id, // Use actual user ID from session
-              moduleId: 'blockchain-basics',
-              title: '🚀 Blockchain Explorer',
-              description: 'Completed your first blockchain learning video! Welcome to the decentralized future.',
-              imageUrl: 'https://via.placeholder.com/64/4F46E5/FFFFFF?text=🚀',
-            }),
-          });
-          console.log('Blockchain badge awarded!');
-        } catch (badgeError) {
-          console.error('Failed to award badge:', badgeError);
-        }
-      }
+  const handleComplete = useCallback(async () => {
+    if (completed) return;
+    setCompleted(true);
 
-      if (onComplete) onComplete();
-    } catch (error) {
-      console.error('Failed to save history:', error);
+    try {
+      await fetch('/api/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ videoId, watchTime: 0, completed: true }),
+      });
+    } catch {}
+
+    // Update playlist progress
+    if (playlistId) {
+      try {
+        await fetch(`/api/playlist/${playlistId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ completedVideoId: videoId }),
+        });
+      } catch {}
+    }
+
+    if (onVideoCompleted) onVideoCompleted(videoId);
+    if (onComplete) onComplete();
+  }, [completed, videoId, playlistId, onVideoCompleted, onComplete]);
+
+  const handleQuizSubmit = async () => {
+    setQuizSubmitted(true);
+    const score = quiz.filter((q, i) => selectedAnswers[i] === q.correctAnswer).length;
+    setQuizScore(score);
+
+    if (session?.user?.id) {
+      try {
+        await fetch('/api/quiz/result', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ youtubeId: videoId, score, total: quiz.length }),
+        });
+      } catch {}
     }
   };
 
-  const handleQuizSubmit = () => {
-    setQuizSubmitted(true);
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'beginner': return 'bg-green-500 dark:bg-green-600';
-      case 'intermediate': return 'bg-yellow-500 dark:bg-yellow-600';
-      case 'advanced': return 'bg-red-500 dark:bg-red-600';
-      default: return 'bg-gray-500 dark:bg-gray-600';
+  const getDifficultyStyles = (difficulty: string) => {
+    switch (difficulty.toLowerCase()) {
+      case 'beginner': return 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20';
+      case 'intermediate': return 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+      case 'advanced': return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
+      default: return 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20';
     }
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6">
       {/* Video Player */}
-      <div className="bg-card border rounded-lg overflow-hidden">
-        <CardContent className="p-0">
-          <div className="aspect-video">
-            <iframe
-              src={`https://www.youtube.com/embed/${videoId}`}
-              title={title}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-          
-          <div className="p-3 sm:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 mb-4">
-              <div className="flex-1">
-                <h1 className="text-lg sm:text-xl font-bold mb-2">{title}</h1>
-                <p className="text-sm sm:text-base text-muted-foreground mb-2">{channelTitle}</p>
-                <Badge className={`${getDifficultyColor(difficulty)} text-white text-xs`}>
-                  <BookOpen className="h-3 w-3 mr-1" />
-                  {difficulty}
-                </Badge>
-              </div>
-              
-              <div className="flex gap-2">
-                {onComplete && (
-                  <Button onClick={handleComplete} variant="outline" size="sm" className="flex-1 sm:flex-none">
-                    <CheckCircle2 className="h-4 w-4 mr-1 sm:mr-2" />
-                    <span className="hidden sm:inline">Complete</span>
-                    <span className="sm:hidden">Done</span>
-                  </Button>
-                )}
-                {onNext && (
-                  <Button onClick={onNext} size="sm" className="flex-1 sm:flex-none">
-                    <span className="hidden sm:inline">Next Video</span>
-                    <span className="sm:hidden">Next</span>
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </CardContent>
+      <div className="bg-black border border-zinc-200 dark:border-white/10 rounded-[2rem] overflow-hidden shadow-xl">
+        <div className="aspect-video relative w-full">
+          <div id={`yt-player-${videoId}`} className="absolute inset-0 w-full h-full" />
+        </div>
       </div>
 
-      {/* Tabs for additional content */}
+      {/* Video Details */}
+      <div className="px-2 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
+        <div className="flex-1 space-y-3">
+          <Badge variant="outline" className={`text-[10px] uppercase tracking-wider px-2.5 py-0.5 rounded-md font-bold border backdrop-blur-md ${getDifficultyStyles(difficulty)}`}>
+            {difficulty}
+          </Badge>
+          <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 dark:text-white tracking-tight leading-tight">{title}</h1>
+          <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">{channelTitle}</p>
+        </div>
+
+        <div className="flex gap-3 shrink-0">
+          {onComplete && (
+            <Button
+              onClick={handleComplete}
+              variant={completed ? 'default' : 'outline'}
+              className={`h-11 rounded-xl font-semibold transition-all shadow-sm ${
+                completed 
+                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20' 
+                  : 'bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-white/5 text-zinc-700 dark:text-zinc-300 backdrop-blur-md'
+              }`}
+              disabled={completed}
+            >
+              <CheckCircle2 className={`h-4 w-4 mr-2 ${completed ? 'fill-white/20' : ''}`} />
+              <span>{completed ? 'Completed' : 'Mark as Complete'}</span>
+            </Button>
+          )}
+          {onNext && (
+            <Button onClick={onNext} className="h-11 rounded-xl font-semibold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 shadow-md">
+              Next Video
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Tabs */}
       <Tabs defaultValue="summary" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto">
-          <TabsTrigger value="summary" className="text-xs sm:text-sm py-2 px-1 sm:px-4">
-            <Brain className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+        <TabsList className="grid w-full grid-cols-4 h-auto bg-white/50 dark:bg-zinc-900/40 backdrop-blur-xl p-1.5 rounded-[1.5rem] border border-zinc-200 dark:border-white/10 shadow-sm">
+          <TabsTrigger value="summary" className="rounded-[1rem] data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white font-medium">
+            <Brain className="h-4 w-4 mr-1.5" />
             <span className="hidden sm:inline">AI Summary</span>
             <span className="sm:hidden">Summary</span>
           </TabsTrigger>
-          <TabsTrigger value="quiz" className="text-xs sm:text-sm py-2 px-1 sm:px-4">
-            <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <TabsTrigger value="flashcards" className="rounded-[1rem] data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white font-medium">
+            <BookOpen className="h-4 w-4 mr-1.5" />
+            <span className="hidden sm:inline">Flashcards</span>
+            <span className="sm:hidden">Cards</span>
+          </TabsTrigger>
+          <TabsTrigger value="quiz" className="rounded-[1rem] data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white font-medium">
+            <CheckCircle2 className="h-4 w-4 mr-1.5" />
             <span className="hidden sm:inline">Knowledge Check</span>
             <span className="sm:hidden">Quiz</span>
           </TabsTrigger>
-          <TabsTrigger value="notes" className="text-xs sm:text-sm py-2 px-1 sm:px-4">
-            <FileText className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+          <TabsTrigger value="notes" className="rounded-[1rem] data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:shadow-sm transition-all text-xs sm:text-sm py-2.5 px-1 sm:px-4 text-zinc-600 dark:text-zinc-400 data-[state=active]:text-zinc-900 dark:data-[state=active]:text-white font-medium">
+            <FileText className="h-4 w-4 mr-1.5" />
             <span className="hidden sm:inline">My Notes</span>
             <span className="sm:hidden">Notes</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="summary">
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <Brain className="h-4 w-4 sm:h-5 sm:w-5" />
+        {/* Summary */}
+        <TabsContent value="summary" className="mt-4">
+          <div className="bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2rem] shadow-xl overflow-hidden">
+            <div className="p-6 sm:p-8 border-b border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-black/20">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-white">
+                <Brain className="h-5 w-5 text-primary" />
                 AI-Generated Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              </h3>
+            </div>
+            <div className="p-6 sm:p-8">
               {isLoadingAI ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
-                  <span>Generating summary...</span>
+                <div className="flex items-center gap-3 text-zinc-500 font-medium">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                  Generating comprehensive summary...
                 </div>
               ) : (
-                <div className="prose max-w-none">
-                  <p className="whitespace-pre-line">{summary}</p>
+                <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-zinc-900 dark:prose-headings:text-white prose-p:text-zinc-600 dark:prose-p:text-zinc-400 prose-li:text-zinc-600 dark:prose-li:text-zinc-400 prose-strong:text-zinc-900 dark:prose-strong:text-zinc-200 prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3">
+                  <ReactMarkdown>{summary}</ReactMarkdown>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="quiz">
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" />
-                Knowledge Check
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+        {/* Flashcards */}
+        <TabsContent value="flashcards" className="mt-4">
+          <div className="bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2rem] shadow-xl overflow-hidden">
+            <div className="p-6 sm:p-8 border-b border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-black/20">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-white">
+                <BookOpen className="h-5 w-5 text-primary" />
+                Flashcards
+                {flashcards.length > 0 && (
+                  <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400 ml-2">({flashcards.length} cards)</span>
+                )}
+              </h3>
+            </div>
+            <div className="p-6 sm:p-8">
               {isLoadingAI ? (
-                <div className="flex items-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-r-transparent" />
-                  <span>Generating quiz...</span>
+                <div className="flex items-center gap-3 text-zinc-500 font-medium">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                  Generating flashcards...
+                </div>
+              ) : flashcards.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {flashcards.map((card, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setFlippedCards(prev => {
+                        const next = new Set(prev);
+                        next.has(i) ? next.delete(i) : next.add(i);
+                        return next;
+                      })}
+                      className="relative min-h-[160px] rounded-2xl transition-all text-left group perspective-1000"
+                      style={{ perspective: '1000px' }}
+                    >
+                      <div
+                        className="w-full h-full transition-transform duration-500 relative"
+                        style={{
+                          transformStyle: 'preserve-3d',
+                          transform: flippedCards.has(i) ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                          minHeight: '160px',
+                        }}
+                      >
+                        {/* Front */}
+                        <div className="absolute inset-0 p-6 flex flex-col justify-between bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-white/10 rounded-2xl group-hover:border-primary/50 shadow-sm" style={{ backfaceVisibility: 'hidden' }}>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Question</span>
+                          <p className="text-[15px] font-medium leading-relaxed text-zinc-900 dark:text-zinc-100">{card.front}</p>
+                          <span className="text-[10px] font-medium text-zinc-400">Click to reveal</span>
+                        </div>
+                        {/* Back */}
+                        <div className="absolute inset-0 p-6 flex flex-col justify-between bg-primary/5 border border-primary/20 rounded-2xl shadow-sm" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                          <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Answer</span>
+                          <p className="text-[15px] font-medium leading-relaxed text-zinc-900 dark:text-zinc-100">{card.back}</p>
+                          <span className="text-[10px] font-medium text-zinc-400">Click to flip back</span>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-zinc-500 font-medium">Flashcards will appear here after generation.</p>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* Quiz */}
+        <TabsContent value="quiz" className="mt-4">
+          <div className="bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2rem] shadow-xl overflow-hidden">
+            <div className="p-6 sm:p-8 border-b border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-black/20">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-white">
+                <CheckCircle2 className="h-5 w-5 text-primary" />
+                Knowledge Check
+              </h3>
+            </div>
+            <div className="p-6 sm:p-8">
+              {isLoadingAI ? (
+                <div className="flex items-center gap-3 text-zinc-500 font-medium">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
+                  Generating quiz...
                 </div>
               ) : quiz.length > 0 ? (
-                <div className="space-y-6">
+                <div className="space-y-8">
+                  {quizSubmitted && quizScore !== null && (
+                    <div className={`p-6 rounded-2xl border text-center backdrop-blur-sm shadow-sm ${
+                      quizScore / quiz.length >= 0.7
+                        ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                        : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
+                    }`}>
+                      <p className="text-3xl font-extrabold mb-1">{quizScore} / {quiz.length}</p>
+                      <p className="text-sm font-medium">
+                        {Math.round((quizScore / quiz.length) * 100)}% — {quizScore / quiz.length >= 0.7 ? '🎉 Great work!' : '📚 Keep practicing'}
+                      </p>
+                    </div>
+                  )}
                   {quiz.map((question, qIndex) => (
-                    <div key={qIndex} className="space-y-3">
-                      <h3 className="font-semibold">{question.question}</h3>
-                      
-                      <div className="space-y-2">
-                        {question.options.map((option, oIndex) => (
-                          <button
-                            key={oIndex}
-                            onClick={() => 
-                              setSelectedAnswers(prev => ({ ...prev, [qIndex]: oIndex }))
+                    <div key={qIndex} className="space-y-4">
+                      <h3 className="font-semibold text-base text-zinc-900 dark:text-zinc-100 leading-relaxed">
+                        <span className="text-primary mr-2">{qIndex + 1}.</span> 
+                        {question.question}
+                      </h3>
+                      <div className="space-y-2.5">
+                        {question.options.map((option, oIndex) => {
+                          const isSelected = selectedAnswers[qIndex] === oIndex;
+                          const isCorrect = oIndex === question.correctAnswer;
+                          
+                          let btnClass = "w-full text-left p-4 rounded-xl border transition-all text-sm font-medium shadow-sm ";
+                          if (!quizSubmitted) {
+                            btnClass += isSelected 
+                              ? "bg-primary/10 border-primary text-primary" 
+                              : "bg-white dark:bg-zinc-800/50 border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800";
+                          } else {
+                            if (isSelected && isCorrect) {
+                              btnClass += "bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300";
+                            } else if (isSelected && !isCorrect) {
+                              btnClass += "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300";
+                            } else if (isCorrect) {
+                              btnClass += "bg-emerald-500/5 border-emerald-500/20 text-emerald-600 dark:text-emerald-400";
+                            } else {
+                              btnClass += "bg-white/50 dark:bg-zinc-800/30 border-zinc-200 dark:border-white/5 text-zinc-400 opacity-60";
                             }
-                            disabled={quizSubmitted}
-                            className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                              selectedAnswers[qIndex] === oIndex 
-                                ? quizSubmitted
-                                  ? oIndex === question.correctAnswer
-                                    ? 'bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-700 text-green-700 dark:text-green-200'
-                                    : 'bg-red-100 dark:bg-red-900 border-red-500 dark:border-red-700 text-red-700 dark:text-red-200'
-                                  : 'bg-primary/10 border-primary'
-                                : quizSubmitted && oIndex === question.correctAnswer
-                                ? 'bg-green-100 dark:bg-green-900 border-green-500 dark:border-green-700 text-green-700 dark:text-green-200'
-                                : 'hover:bg-muted'
-                            }`}
-                          >
-                            {option}
-                          </button>
-                        ))}
-                      </div>
+                          }
 
+                          return (
+                            <button
+                              key={oIndex}
+                              onClick={() => !quizSubmitted && setSelectedAnswers(prev => ({ ...prev, [qIndex]: oIndex }))}
+                              disabled={quizSubmitted}
+                              className={btnClass}
+                            >
+                              {option}
+                            </button>
+                          );
+                        })}
+                      </div>
                       {quizSubmitted && (
-                        <div className="mt-3 p-3 bg-blue-50 dark:bg-slate-800 rounded-lg">
-                          <p className="text-sm text-blue-700 dark:text-blue-200">{question.explanation}</p>
+                        <div className="mt-4 p-4 bg-primary/5 border border-primary/10 rounded-xl">
+                          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed">
+                            <span className="font-bold text-primary mr-2">Explanation:</span>
+                            {question.explanation}
+                          </p>
                         </div>
                       )}
-                      
-                      {qIndex < quiz.length - 1 && <Separator />}
+                      {qIndex < quiz.length - 1 && <Separator className="my-8 opacity-50" />}
                     </div>
                   ))}
-                  
                   {!quizSubmitted && (
-                    <Button onClick={handleQuizSubmit} className="w-full">
-                      Submit Quiz
+                    <Button
+                      onClick={handleQuizSubmit}
+                      className="w-full h-12 rounded-xl text-base font-bold bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90 shadow-md mt-6"
+                      disabled={Object.keys(selectedAnswers).length < quiz.length}
+                    >
+                      Submit Quiz ({Object.keys(selectedAnswers).length}/{quiz.length} answered)
                     </Button>
                   )}
                 </div>
               ) : (
-                <p className="text-muted-foreground">Quiz questions will appear here after generation.</p>
+                <p className="text-zinc-500 font-medium">Quiz questions will appear here after generation.</p>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="notes">
-          <Card>
-            <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
-                <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+        {/* Notes */}
+        <TabsContent value="notes" className="mt-4">
+          <div className="bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2rem] shadow-xl overflow-hidden">
+            <div className="p-6 sm:p-8 border-b border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-black/20 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-zinc-900 dark:text-white">
+                <FileText className="h-5 w-5 text-primary" />
                 My Notes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0">
+              </h3>
+              {notesSaved && (
+                <span className="text-xs font-semibold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 rounded-full">
+                  <Save className="h-3.5 w-3.5" /> Saved
+                </span>
+              )}
+            </div>
+            <div className="p-6 sm:p-8">
               <textarea
                 value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Take notes while watching the video..."
-                className="w-full h-32 sm:h-40 p-3 border rounded-lg resize-none bg-transparent focus:outline-none focus:ring-2 focus:ring-primary text-sm sm:text-base"
+                onChange={(e) => { setNotes(e.target.value); setNotesSaved(false); }}
+                placeholder={session?.user?.id ? 'Take notes while watching... (auto-saved)' : 'Sign in to save notes'}
+                disabled={!session?.user?.id}
+                className="w-full min-h-[200px] p-5 border border-zinc-200 dark:border-white/10 rounded-2xl resize-y bg-white/50 dark:bg-zinc-800/50 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-primary/50 text-[15px] leading-relaxed text-zinc-900 dark:text-zinc-100 font-medium placeholder:text-zinc-400 transition-all shadow-inner"
               />
-              <Button className="mt-3">Save Notes</Button>
-            </CardContent>
-          </Card>
+              {!session?.user?.id && (
+                <p className="text-xs font-medium text-amber-600 dark:text-amber-400 mt-3 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3 w-3" /> Notes are saved per video when signed in.
+                </p>
+              )}
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

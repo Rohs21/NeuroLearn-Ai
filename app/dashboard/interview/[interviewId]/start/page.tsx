@@ -101,14 +101,27 @@ function StartInterview({ params }: StartInterviewProps) {
                                 )}
             </div>
             )}
-            <div className='flex flex-col sm:flex-row justify-center sm:justify-end gap-3 sm:gap-6 mt-6 sm:mt-8 px-2'>
+            <div className='flex flex-col sm:flex-row justify-center sm:justify-end gap-3 sm:gap-4 mt-6 sm:mt-10 px-2'>
                 {activeQuestionIndex > 0 &&
-                    <Button onClick={() => setActiveQuestionIndex(activeQuestionIndex - 1)}>Previous Question</Button>}
+                    <Button 
+                        variant="outline"
+                        onClick={() => setActiveQuestionIndex(activeQuestionIndex - 1)}
+                        className="font-medium border-zinc-200 dark:border-white/10 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                        Previous Question
+                    </Button>}
                 {activeQuestionIndex !== mockInterviewQuestion.length - 1 &&
-                    <Button onClick={() => setActiveQuestionIndex(activeQuestionIndex + 1)}>Next Question</Button>}
+                    <Button 
+                        onClick={() => setActiveQuestionIndex(activeQuestionIndex + 1)}
+                        className="font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90"
+                    >
+                        Next Question
+                    </Button>}
                 {activeQuestionIndex === mockInterviewQuestion.length - 1 &&
                     <Link href={`/dashboard/interview/${interviewData?.mockId}/feedback`}>
-                        <Button>End Interview</Button>
+                        <Button className="w-full sm:w-auto font-medium bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 hover:opacity-90">
+                            End Interview
+                        </Button>
                     </Link>}
             </div>
         </div>

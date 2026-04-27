@@ -1245,9 +1245,10 @@ const Hyperspeed: FC<HyperspeedProps> = ({ effectOptions = {} }) => {
       options.colors = {
         ...options.colors,
         background: 0xffffff,
-        // keep road/island colors but ensure they exist
-        roadColor: options.colors.roadColor ?? 0x080808,
-        islandColor: options.colors.islandColor ?? 0x0a0a0a
+        roadColor: 0xf0f0f0,
+        islandColor: 0xe5e5e5,
+        shoulderLines: 0x111111,
+        brokenLines: 0x111111,
       };
     }
     if (typeof options.distortion === 'string') {

@@ -2,10 +2,8 @@ import type { Session, User } from "next-auth"
 
 import CredentialsProvider from "next-auth/providers/credentials"
 import { PrismaAdapter } from "@next-auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"
+import prisma from "@/lib/prisma"
 import bcrypt from "bcryptjs"
-
-const prisma = new PrismaClient()
 
 // Basic environment checks to help diagnose production issues where
 // NextAuth requires `NEXTAUTH_URL` and `NEXTAUTH_SECRET` to be set.
@@ -73,42 +71,15 @@ export const authOptions: any = {
   callbacks: {
     async jwt({ token, user }: { token: Record<string, unknown>, user?: User }) {
       if (user) {
-        // Attach user id into the token for downstream session population.
-        // This log helps confirm that the JWT callback runs in production.
-        try {
-          // user may be a partial object depending on provider
-          // Avoid logging sensitive info; only log the id presence.
-          // @ts-ignore
-          const uid = user?.id ?? '[no-id]'
-          console.log('[NextAuth][jwt] attaching user id:', uid)
-        } catch (e) {
-          console.warn('[NextAuth][jwt] logging error', e)
-        }
         token.id = (user as any).id
       }
       return token
     },
     async session({ session, token }: { session: Session, token: Record<string, unknown> }) {
-      // Populate session.user.id from the token for client access.
-      try {
-        if (token && session.user) {
-          // Avoid exposing token contents; only ensure id is present.
-          session.user.id = token.id as string
-        }
-        console.log('[NextAuth][session] session created, userId=', session.user?.id ?? 'none', 'token=', token.id ?? 'no-id')
-      } catch (e) {
-        console.warn('[NextAuth][session] error populating session', e)
+      if (token && session.user) {
+        session.user.id = token.id as string
       }
       return session
-    }
-  },
-  events: {
-    async signIn({ user, isNewUser }: any) {
-      try {
-        console.log('[NextAuth][event] signIn userId=', user?.id ?? 'unknown', 'isNewUser=', !!isNewUser)
-      } catch (e) {
-        console.warn('[NextAuth][event] signIn logging failed', e)
-      }
     }
   }
 }

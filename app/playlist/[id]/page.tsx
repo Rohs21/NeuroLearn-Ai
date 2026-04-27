@@ -39,6 +39,13 @@ export default function PlaylistPage({ params }: { params: { id: string } }) {
   }, [params.id]);
 
   const handleVideoPlay = (videoId: string) => {
+    if (playlist) {
+      // Store full playlist with DB id so watch page can update progress
+      localStorage.setItem('neuro_playlist', JSON.stringify({
+        ...playlist.videos,
+        _playlistId: params.id,
+      }));
+    }
     router.push(`/watch?v=${videoId}`);
   };
 
@@ -60,8 +67,12 @@ export default function PlaylistPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
-      <Navbar showBackButton={true} showAuthButtons={true} isAuthenticated={sessionStatus === 'authenticated'} />
+    <div className="min-h-screen bg-zinc-50 dark:bg-[#09090b] relative z-10 overflow-hidden">
+      {/* Background glow effects */}
+      <div className="pointer-events-none absolute top-0 left-1/4 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px] opacity-70" />
+      <div className="pointer-events-none absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[100px] opacity-50" />
+
+      <Navbar />
 
       <main className="container mx-auto px-4 py-8">
         {/* <h1 className="text-2xl font-bold mb-4">{playlist.title}</h1>
