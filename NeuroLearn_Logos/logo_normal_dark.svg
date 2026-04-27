@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="253" height="80" viewBox="0 0 253 80">
+  <rect width="400" height="80" fill="#000000"/>
+  <!-- Icon -->
+  <rect x="0" y="4" width="72" height="72" rx="16" fill="#ffffff"/>
+  <line x1="18" y1="62" x2="18" y2="18" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+  <line x1="18" y1="18" x2="54" y2="62" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+  <line x1="54" y1="62" x2="54" y2="18" stroke="#000000" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="18" cy="18" r="4.5" fill="#000000"/>
+  <circle cx="54" cy="18" r="4.5" fill="#000000"/>
+  <circle cx="18" cy="62" r="4.5" fill="#000000"/>
+  <circle cx="54" cy="62" r="4.5" fill="#000000"/>
+  <circle cx="36" cy="40" r="3.5" fill="#000000" opacity="0.5"/>
+  <!-- Wordmark -->
+  <text x="90" y="50" font-family="system-ui, -apple-system, sans-serif" font-size="32" font-weight="500" fill="#ffffff" letter-spacing="-0.5">NeuroLearn</text>
+  <text x="91" y="70" font-family="system-ui, -apple-system, sans-serif" font-size="12" font-weight="400" fill="#aaaaaa" letter-spacing="4">AI</text>
+</svg>

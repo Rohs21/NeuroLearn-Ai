@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GeminiService } from '@/lib/services/gemini';
+import { GroqService } from '@/lib/services/groq';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,8 +22,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Job description is required' }, { status: 400 });
     }
 
-    const geminiService = new GeminiService();
-    const curatedData = await geminiService.enhanceJobKeywords(jobTitle, jobDescription);
+    const groqService = new GroqService();
+    const curatedData = await groqService.enhanceJobKeywords(jobTitle, jobDescription);
 
     return NextResponse.json(curatedData, { headers: corsHeaders });
   } catch (error) {

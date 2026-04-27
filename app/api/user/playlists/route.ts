@@ -10,7 +10,6 @@ export async function GET(req: NextRequest) {
     const session = (await getServerSession(authOptions)) as Session | null;
 
     if (!session?.user?.email) {
-      console.log('[API] No session found for playlists request');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

@@ -9,11 +9,8 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions) as Session & { user: { id: string } }
     
     if (!session?.user?.id) {
-      console.log('[API][history] No session found. Session:', session);
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    console.log('[API][history] Session found for user:', session.user.id);
 
   const history = await prisma.history.findMany({
       where: {
@@ -25,7 +22,7 @@ export async function GET(req: NextRequest) {
       orderBy: {
         viewedAt: "desc",
       },
-      take: 10
+      take: 50
     })
 
     // Get total count of all videos the user has viewed
@@ -50,39 +47,13 @@ export async function POST(req: NextRequest) {
     const session = await getServerSession(authOptions) as Session & { user: { id: string } }
     
     if (!session?.user?.id) {
-      console.log('[API][history-post] No session found');
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-
-    console.log('[API][history-post] Session found for user:', session.user.id);
 
     const { videoId, watchTime, completed, title, description, thumbnailUrl, duration } = await req.json();
 
     if (!videoId) {
-      return NextResponse.json(
-        { error: "Video ID is required" },
-        { status: 400 }
-      );
-    }
-
-    // Check current history count
-    const historyCount = await prisma.history.count({
-      where: { userId: session.user.id }
-    });
-
-    // If user has 10 or more history entries, delete the oldest one
-    if (historyCount >= 10) {
-      const oldestHistory = await prisma.history.findFirst({
-        where: { userId: session.user.id },
-        orderBy: { viewedAt: 'asc' },
-        select: { id: true }
-      });
-
-      if (oldestHistory) {
-        await prisma.history.delete({
-          where: { id: oldestHistory.id }
-        });
-      }
+      return NextResponse.json({ error: "Video ID is required" }, { status: 400 });
     }
 
     // Ensure video exists
