@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react"
 import SignInForm from "@/components/auth/signin-form"
 import { Navbar } from "@/components/navbar"
 import Hyperspeed from "@/components/Hyperspeed"
@@ -61,7 +62,9 @@ export default function SignInPage() {
             <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-10 w-auto dark:hidden" />
             <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-10 w-auto" />
           </div>
-          <SignInForm />
+          <Suspense>
+            <SignInForm />
+          </Suspense>
         </div>
         
         <p className="text-xs text-zinc-500 mt-8 relative z-10 animate-in fade-in duration-700 delay-300">
