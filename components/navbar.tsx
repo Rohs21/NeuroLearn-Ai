@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { BrandLogo } from '@/components/brand-logo';
 import { useState, useEffect } from 'react';
 
 const NAV_LINKS = [
@@ -27,9 +28,8 @@ export function Navbar() {
 
         {/* Logo */}
         <div className="flex flex-1 justify-start">
-          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity shrink-0 group">
-            <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-8 w-auto dark:hidden" />
-            <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-8 w-auto" />
+          <Link href="/" className="group hover:opacity-80 transition-opacity shrink-0" aria-label="NeuroLearn home">
+            <BrandLogo size="sm" />
           </Link>
         </div>
 

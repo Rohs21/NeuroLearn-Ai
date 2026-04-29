@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Hyperspeed from '@/components/Hyperspeed';
+import { BrandLogo } from '@/components/brand-logo';
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -503,7 +504,7 @@ return (
                   <div className="bg-zinc-900 dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 rounded-2xl flex items-center justify-center p-8">
                     <div className="text-center">
                       <div className="flex justify-center mx-auto mb-4">
-                        <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="h-10 w-auto" />
+                        <BrandLogo size="sm" showTagline={false} inverted />
                       </div>
                       <p className="text-zinc-500 text-xs mt-0.5">AI-Powered Learning</p>
                     </div>
@@ -573,8 +574,7 @@ return (
           <section className="py-24 px-6 border-t border-zinc-200 dark:border-white/10">
             <AnimateSection className="max-w-2xl mx-auto text-center">
               <div className="flex justify-center mb-7">
-                <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-12 w-auto dark:hidden" />
-                <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-12 w-auto" />
+                <BrandLogo size="lg" />
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 dark:text-white mb-3">Start Learning Today</h2>
               <p className="text-zinc-500 dark:text-zinc-400 text-sm leading-relaxed mb-9">
@@ -596,8 +596,7 @@ return (
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-14">
                 <div className="md:col-span-2">
                   <div className="flex items-center mb-3">
-                    <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-8 w-auto dark:hidden" />
-                    <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-8 w-auto" />
+                    <BrandLogo size="sm" />
                   </div>
                   <p className="text-zinc-500 text-sm leading-relaxed mb-5 max-w-xs">
                     AI-curated learning paths, streak tracking, mock interviews, and quizzes — all free.

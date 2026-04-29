@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { signOut, useSession, signIn } from 'next-auth/react';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { BrandLogo } from '@/components/brand-logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -424,9 +425,8 @@ export default function Dashboard() {
       {/* ── NAV ─────────────────────────────────────────────────── */}
       <header className="border-b border-zinc-200 dark:border-white/10 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-2xl sticky top-0 z-50">
         <div className="max-w-7xl mx-auto w-full px-6 py-3 flex items-center gap-4">
-          <Link href="/" className="flex items-center shrink-0 hover:opacity-80 transition-opacity">
-            <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-8 w-auto dark:hidden" />
-            <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-8 w-auto" />
+          <Link href="/" className="group shrink-0 hover:opacity-80 transition-opacity" aria-label="NeuroLearn home">
+            <BrandLogo size="sm" />
           </Link>
 
           {/* Desktop Nav */}
@@ -501,8 +501,7 @@ export default function Dashboard() {
               {/* ── HERO BANNER ────────────────────────────────── */}
               <div className="mb-6 relative overflow-hidden bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-xl p-3 sm:p-4 shadow-sm max-w-7xl mx-auto w-full">
                 <div className="absolute top-0 right-0 p-2 opacity-[0.03] pointer-events-none">
-                  <img src="/logo_normal.svg" alt="" className="w-20 h-auto dark:hidden" />
-                  <img src="/logo_normal_dark.svg" alt="" className="hidden dark:block w-20 h-auto" />
+                    <BrandLogo size="lg" showTagline={false} />
                 </div>
                 <div className="relative z-10 flex items-center justify-between">
                   <div>

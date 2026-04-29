@@ -3,6 +3,7 @@
 import SignUpForm from "@/components/auth/signup-form"
 import { Navbar } from "@/components/navbar"
 import Hyperspeed from "@/components/Hyperspeed"
+import { BrandLogo } from "@/components/brand-logo"
 
 export default function SignUpPage() {
   return (
@@ -58,8 +59,7 @@ export default function SignUpPage() {
 
         <div className="w-full max-w-[420px] my-auto bg-white/70 dark:bg-zinc-900/60 backdrop-blur-2xl border border-zinc-200 dark:border-white/10 rounded-[2rem] p-8 sm:p-10 shadow-xl relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="mb-8 flex justify-center">
-            <img src="/logo_normal.svg" alt="NeuroLearn Logo" className="h-10 w-auto dark:hidden" />
-            <img src="/logo_normal_dark.svg" alt="NeuroLearn Logo" className="hidden dark:block h-10 w-auto" />
+            <BrandLogo size="lg" />
           </div>
           <SignUpForm />
         </div>
