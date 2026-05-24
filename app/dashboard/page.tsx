@@ -500,9 +500,6 @@ export default function Dashboard() {
             <>
               {/* ── HERO BANNER ────────────────────────────────── */}
               <div className="mb-6 relative overflow-hidden bg-white/40 dark:bg-zinc-900/40 backdrop-blur-3xl border border-white/40 dark:border-white/10 rounded-xl p-3 sm:p-4 shadow-sm max-w-7xl mx-auto w-full">
-                <div className="absolute top-0 right-0 p-2 opacity-[0.03] pointer-events-none">
-                    <BrandLogo size="lg" showTagline={false} />
-                </div>
                 <div className="relative z-10 flex items-center justify-between">
                   <div>
                     <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/60 dark:bg-black/40 border border-black/5 dark:border-white/5 text-[9px] font-medium mb-1 backdrop-blur-md">
