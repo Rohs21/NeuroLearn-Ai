@@ -75,7 +75,7 @@ function HeatmapCell({ count, date }: { count: number; date: string }) {
   return (
     <div
       title={`${date}: ${count} video${count !== 1 ? 's' : ''}`}
-      className={`h-3 w-3 rounded-sm ${intensity} transition-colors cursor-default hover:ring-1 hover:ring-primary/60`}
+      className={`h-4 w-4 rounded-sm ${intensity} transition-colors cursor-default hover:ring-1 hover:ring-primary/60`}
     />
   );
 }
@@ -114,59 +114,59 @@ function LeetCodeHeatmap({ activity, currentStreak, longestStreak, totalDays }: 
   const DAY_LABELS = ['', 'Mon', '', 'Wed', '', 'Fri', ''];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 w-full">
       {/* Streak stats row */}
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1.5">
-          <div className="h-8 w-8 rounded-lg bg-orange-500/15 flex items-center justify-center">
-            <Flame className="h-4 w-4 text-orange-500" />
+      <div className="mx-auto flex w-fit flex-wrap items-center justify-center gap-3">
+        <div className="flex items-center gap-2">
+          <div className="h-9 w-9 rounded-lg bg-orange-500/15 flex items-center justify-center">
+            <Flame className="h-5 w-5 text-orange-500" />
           </div>
           <div>
-            <p className="text-lg font-bold leading-none">{currentStreak}</p>
-            <p className="text-[10px] text-muted-foreground">day streak</p>
+            <p className="text-xl font-bold leading-none">{currentStreak}</p>
+            <p className="text-[11px] text-muted-foreground">day streak</p>
           </div>
         </div>
-        <div className="w-px h-8 bg-border" />
-        <div className="flex items-center gap-1.5">
-          <div className="h-8 w-8 rounded-lg bg-yellow-500/15 flex items-center justify-center">
-            <Trophy className="h-4 w-4 text-yellow-500" />
+        <div className="w-px h-9 bg-border" />
+        <div className="flex items-center gap-2">
+          <div className="h-9 w-9 rounded-lg bg-yellow-500/15 flex items-center justify-center">
+            <Trophy className="h-5 w-5 text-yellow-500" />
           </div>
           <div>
-            <p className="text-lg font-bold leading-none">{longestStreak}</p>
-            <p className="text-[10px] text-muted-foreground">longest</p>
+            <p className="text-xl font-bold leading-none">{longestStreak}</p>
+            <p className="text-[11px] text-muted-foreground">longest</p>
           </div>
         </div>
-        <div className="w-px h-8 bg-border" />
-        <div className="flex items-center gap-1.5">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Zap className="h-4 w-4 text-primary" />
+        <div className="w-px h-9 bg-border" />
+        <div className="flex items-center gap-2">
+          <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Zap className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <p className="text-lg font-bold leading-none">{totalDays}</p>
-            <p className="text-[10px] text-muted-foreground">active days</p>
+            <p className="text-xl font-bold leading-none">{totalDays}</p>
+            <p className="text-[11px] text-muted-foreground">active days</p>
           </div>
         </div>
       </div>
 
       {/* Grid */}
-      <div className="overflow-x-auto pb-1">
-        <div className="inline-flex gap-0">
+      <div className="overflow-x-auto pb-1 flex justify-center">
+        <div className="inline-flex gap-0 mx-auto">
           {/* Day labels */}
-          <div className="flex flex-col gap-[3px] mr-1.5 mt-5">
+          <div className="flex flex-col gap-[3px] mr-1.5 mt-[18px]">
             {DAY_LABELS.map((d, i) => (
-              <span key={i} className="text-[9px] text-muted-foreground h-3 flex items-center w-6">{d}</span>
+              <span key={i} className="text-[10px] text-muted-foreground h-4 flex items-center w-7">{d}</span>
             ))}
           </div>
 
           {/* Weeks */}
           <div className="flex flex-col gap-0">
             {/* Month row */}
-            <div className="flex gap-[3px] mb-1 h-4">
+            <div className="flex gap-[3px] mb-1 h-5">
               {weeks.map((_, wi) => {
                 const ml = monthLabels.find(m => m.col === wi);
                 return (
-                  <div key={wi} className="w-3 flex items-center">
-                    {ml && <span className="text-[9px] text-muted-foreground whitespace-nowrap">{ml.label}</span>}
+                  <div key={wi} className="w-4 flex items-center">
+                    {ml && <span className="text-[10px] text-muted-foreground whitespace-nowrap">{ml.label}</span>}
                   </div>
                 );
               })}
@@ -180,7 +180,7 @@ function LeetCodeHeatmap({ activity, currentStreak, longestStreak, totalDays }: 
                     return cell ? (
                       <HeatmapCell key={di} count={cell.count} date={cell.date} />
                     ) : (
-                      <div key={di} className="h-3 w-3" />
+                      <div key={di} className="h-4 w-4" />
                     );
                   })}
                 </div>
@@ -191,7 +191,7 @@ function LeetCodeHeatmap({ activity, currentStreak, longestStreak, totalDays }: 
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center justify-center gap-1.5">
         <span className="text-[10px] text-muted-foreground">Less</span>
         {['bg-muted', 'bg-primary/25', 'bg-primary/55', 'bg-primary'].map((c, i) => (
           <div key={i} className={`h-3 w-3 rounded-sm ${c}`} />
@@ -516,96 +516,11 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* ── ROW 1: ANALYTICS | COMPLETION | HEATMAP ────── */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-
-                {/* Bar chart */}
-                <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
-                  <CardHeader className="pb-2 flex flex-row items-start justify-between">
-                    <div>
-                      <CardTitle className="text-base font-medium flex items-center gap-2">
-                        <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
-                          <BarChart2 className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
-                        </div>
-                        Analytics
-                      </CardTitle>
-                      <p className="text-xs text-muted-foreground mt-0.5">Daily videos watched — last 7 days</p>
-                    </div>
-                    <span className="text-[10px] border rounded px-2 py-0.5 text-muted-foreground">Week</span>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="flex items-baseline gap-1 mb-3">
-                      <span className="text-3xl font-bold">{Math.round(stats.totalWatchTime / 60)}</span>
-                      <span className="text-sm text-muted-foreground">mins total</span>
-                    </div>
-                    <div className="flex gap-4 mb-2">
-                      <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <span className="h-2 w-2 rounded-full bg-primary inline-block" /> Watched
-                      </span>
-                    </div>
-                    <ResponsiveContainer width="100%" height={110}>
-                      <BarChart data={weeklyActivity} barSize={14}>
-                        <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
-                        <YAxis hide allowDecimals={false} />
-                        <Tooltip
-                          cursor={false}
-                          contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
-                          formatter={(v: any) => [`${v} video${v !== 1 ? 's' : ''}`, '']}
-                        />
-                        <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </CardContent>
-                </Card>
-
-                {/* Donut completion */}
-                <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium flex items-center gap-2">
-                      <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
-                        <Target className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
-                      </div>
-                      Completion
-                    </CardTitle>
-                    <p className="text-xs text-muted-foreground">Overall progress</p>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center pt-0 gap-3">
-                    <div className="relative">
-                      <ResponsiveContainer width={150} height={150}>
-                        <PieChart>
-                          <Pie
-                            data={donutData}
-                            cx="50%" cy="50%"
-                            innerRadius={46} outerRadius={68}
-                            startAngle={90} endAngle={-270}
-                            dataKey="value" strokeWidth={0}
-                          >
-                            <Cell fill="hsl(var(--primary))" />
-                            <Cell fill="hsl(var(--muted))" />
-                          </Pie>
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <span className="text-2xl font-bold">{completionPct}%</span>
-                        <span className="text-[9px] text-muted-foreground uppercase tracking-wide">done</span>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 w-full mt-2">
-                      <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-3 text-center backdrop-blur-sm">
-                        <p className="text-2xl font-semibold text-zinc-800 dark:text-zinc-200">{stats.completedVideos}</p>
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">Completed</p>
-                      </div>
-                      <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-3 text-center backdrop-blur-sm">
-                        <p className="text-2xl font-semibold text-zinc-700 dark:text-zinc-300">{stats.totalVideos}</p>
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">Total</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
+              {/* ── ROW 1: HEATMAP + ANALYTICS/COMPLETION GRID ────── */}
+              <div className="space-y-4 mb-6">
                 {/* LeetCode heatmap */}
-                <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
-                  <CardHeader className="pb-2">
+                <Card className="mx-auto w-full max-w-6xl bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
+                  <CardHeader className="pb-1">
                     <CardTitle className="text-base font-medium flex items-center gap-2">
                       <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
                         <Flame className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
@@ -614,7 +529,7 @@ export default function Dashboard() {
                     </CardTitle>
                     <p className="text-xs text-muted-foreground">Videos completed per day</p>
                   </CardHeader>
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 pb-3">
                     {streakData.activity.length > 0 ? (
                       <LeetCodeHeatmap {...streakData} />
                     ) : (
@@ -624,6 +539,92 @@ export default function Dashboard() {
                     )}
                   </CardContent>
                 </Card>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Bar chart */}
+                  <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
+                    <CardHeader className="pb-2 flex flex-row items-start justify-between">
+                      <div>
+                        <CardTitle className="text-base font-medium flex items-center gap-2">
+                          <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                            <BarChart2 className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
+                          </div>
+                          Analytics
+                        </CardTitle>
+                        <p className="text-xs text-muted-foreground mt-0.5">Daily videos watched — last 7 days</p>
+                      </div>
+                      <span className="text-[10px] border rounded px-2 py-0.5 text-muted-foreground">Week</span>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="flex items-baseline gap-1 mb-3">
+                        <span className="text-3xl font-bold">{Math.round(stats.totalWatchTime / 60)}</span>
+                        <span className="text-sm text-muted-foreground">mins total</span>
+                      </div>
+                      <div className="flex gap-4 mb-2">
+                        <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                          <span className="h-2 w-2 rounded-full bg-primary inline-block" /> Watched
+                        </span>
+                      </div>
+                      <ResponsiveContainer width="100%" height={110}>
+                        <BarChart data={weeklyActivity} barSize={14}>
+                          <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
+                          <YAxis hide allowDecimals={false} />
+                          <Tooltip
+                            cursor={false}
+                            contentStyle={{ fontSize: 11, borderRadius: 8, border: '1px solid hsl(var(--border))' }}
+                            formatter={(v: any) => [`${v} video${v !== 1 ? 's' : ''}`, '']}
+                          />
+                          <Bar dataKey="value" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* Donut completion */}
+                  <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-medium flex items-center gap-2">
+                        <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
+                          <Target className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
+                        </div>
+                        Completion
+                      </CardTitle>
+                      <p className="text-xs text-muted-foreground">Overall progress</p>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center pt-0 gap-3">
+                      <div className="relative">
+                        <ResponsiveContainer width={150} height={150}>
+                          <PieChart>
+                            <Pie
+                              data={donutData}
+                              cx="50%" cy="50%"
+                              innerRadius={46} outerRadius={68}
+                              startAngle={90} endAngle={-270}
+                              dataKey="value" strokeWidth={0}
+                            >
+                              <Cell fill="hsl(var(--primary))" />
+                              <Cell fill="hsl(var(--muted))" />
+                            </Pie>
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                          <span className="text-2xl font-bold">{completionPct}%</span>
+                          <span className="text-[9px] text-muted-foreground uppercase tracking-wide">done</span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 w-full mt-2">
+                        <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-3 text-center backdrop-blur-sm">
+                          <p className="text-2xl font-semibold text-zinc-800 dark:text-zinc-200">{stats.completedVideos}</p>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">Completed</p>
+                        </div>
+                        <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-3 text-center backdrop-blur-sm">
+                          <p className="text-2xl font-semibold text-zinc-700 dark:text-zinc-300">{stats.totalVideos}</p>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">Total</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
 
               {/* ── ROW 2: SECTION CONTENT ──────────────────────── */}
