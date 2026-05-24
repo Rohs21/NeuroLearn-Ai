@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   BookOpen, Clock, History,
-  ArrowRight, Play, Briefcase, Bell,
+  ArrowRight, Play, Briefcase,
   CheckCircle2, Circle, Flame, Trophy,
   Plus, BarChart2, Target, Layers, Zap,
 } from 'lucide-react';
@@ -465,9 +465,6 @@ export default function Dashboard() {
 
           <div className="ml-auto flex items-center gap-2 sm:gap-3 shrink-0">
             <ThemeToggle />
-            <button className="h-8 w-8 rounded-full border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-              <Bell className="h-4 w-4" />
-            </button>
             {isMounted && sessionStatus === 'authenticated' && (
               <button
                 onClick={() => signOut({ callbackUrl: '/' })}
@@ -540,10 +537,10 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="mx-auto grid w-full max-w-6xl grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Bar chart */}
                   <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
-                    <CardHeader className="pb-2 flex flex-row items-start justify-between">
+                    <CardHeader className="pb-1.5 flex flex-row items-start justify-between">
                       <div>
                         <CardTitle className="text-base font-medium flex items-center gap-2">
                           <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
@@ -555,17 +552,17 @@ export default function Dashboard() {
                       </div>
                       <span className="text-[10px] border rounded px-2 py-0.5 text-muted-foreground">Week</span>
                     </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="flex items-baseline gap-1 mb-3">
-                        <span className="text-3xl font-bold">{Math.round(stats.totalWatchTime / 60)}</span>
-                        <span className="text-sm text-muted-foreground">mins total</span>
+                    <CardContent className="pt-0 pb-4">
+                      <div className="flex items-baseline gap-1 mb-2.5">
+                        <span className="text-2xl font-bold">{Math.round(stats.totalWatchTime / 60)}</span>
+                        <span className="text-xs text-muted-foreground">mins total</span>
                       </div>
-                      <div className="flex gap-4 mb-2">
+                      <div className="flex gap-4 mb-1.5">
                         <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
                           <span className="h-2 w-2 rounded-full bg-primary inline-block" /> Watched
                         </span>
                       </div>
-                      <ResponsiveContainer width="100%" height={110}>
+                      <ResponsiveContainer width="100%" height={96}>
                         <BarChart data={weeklyActivity} barSize={14}>
                           <XAxis dataKey="day" tick={{ fontSize: 9 }} axisLine={false} tickLine={false} />
                           <YAxis hide allowDecimals={false} />
@@ -582,7 +579,7 @@ export default function Dashboard() {
 
                   {/* Donut completion */}
                   <Card className="bg-white/60 dark:bg-zinc-900/50 backdrop-blur-2xl border-white/40 dark:border-white/10 rounded-[2rem] shadow-xl hover:shadow-2xl transition-all duration-300">
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-1.5">
                       <CardTitle className="text-base font-medium flex items-center gap-2">
                         <div className="p-2 bg-zinc-100 dark:bg-zinc-800 rounded-xl">
                           <Target className="h-5 w-5 text-zinc-700 dark:text-zinc-300" />
@@ -591,14 +588,14 @@ export default function Dashboard() {
                       </CardTitle>
                       <p className="text-xs text-muted-foreground">Overall progress</p>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center pt-0 gap-3">
+                    <CardContent className="flex flex-col items-center pt-0 pb-4 gap-2.5">
                       <div className="relative">
-                        <ResponsiveContainer width={150} height={150}>
+                        <ResponsiveContainer width={136} height={136}>
                           <PieChart>
                             <Pie
                               data={donutData}
                               cx="50%" cy="50%"
-                              innerRadius={46} outerRadius={68}
+                              innerRadius={42} outerRadius={60}
                               startAngle={90} endAngle={-270}
                               dataKey="value" strokeWidth={0}
                             >
@@ -608,18 +605,18 @@ export default function Dashboard() {
                           </PieChart>
                         </ResponsiveContainer>
                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                          <span className="text-2xl font-bold">{completionPct}%</span>
+                          <span className="text-xl font-bold">{completionPct}%</span>
                           <span className="text-[9px] text-muted-foreground uppercase tracking-wide">done</span>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 w-full mt-2">
-                        <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-3 text-center backdrop-blur-sm">
-                          <p className="text-2xl font-semibold text-zinc-800 dark:text-zinc-200">{stats.completedVideos}</p>
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">Completed</p>
+                      <div className="grid grid-cols-2 gap-3 w-full mt-1.5">
+                        <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-2.5 text-center backdrop-blur-sm">
+                          <p className="text-xl font-semibold text-zinc-800 dark:text-zinc-200">{stats.completedVideos}</p>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">Completed</p>
                         </div>
-                        <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-3 text-center backdrop-blur-sm">
-                          <p className="text-2xl font-semibold text-zinc-700 dark:text-zinc-300">{stats.totalVideos}</p>
-                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-1">Total</p>
+                        <div className="rounded-2xl bg-white/50 dark:bg-black/20 border border-white/40 dark:border-white/5 p-2.5 text-center backdrop-blur-sm">
+                          <p className="text-xl font-semibold text-zinc-700 dark:text-zinc-300">{stats.totalVideos}</p>
+                          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mt-0.5">Total</p>
                         </div>
                       </div>
                     </CardContent>
