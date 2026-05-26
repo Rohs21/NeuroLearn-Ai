@@ -7,6 +7,7 @@ The project aims to provide cutting-edge solutions in AI-powered learning and ca
 
 ## 🚀 Features (Planned)
 - AI-powered personalized learning modules  
+- Structured YouTube playlists ordered by an internal learning roadmap  
 - Real-time quizzes & performance analytics  
 - Automated content summaries  
 - Voice & video-based interview preparation  
