@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
-import { Session } from "next-auth"
+import { YouTubeService } from '@/lib/services/youtube';
+import { GroqService } from '@/lib/services/groq';
 import prisma from '@/lib/prisma';
-import { buildStructuredPlaylist } from '@/lib/services/learning-path';
+import { Session } from "next-auth"
 
 export const dynamic = 'force-dynamic';
 
@@ -16,19 +17,58 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
     }
 
-    const playlist = await buildStructuredPlaylist(query, language, difficulty);
+    const youtubeService = new YouTubeService();
+    const groqService = new GroqService();
 
-    if (!playlist) {
+    // Generate smart queries for better results
+    const smartQueries = await youtubeService.generateSmartQuery(query, language);
+
+    // Search videos from multiple queries and combine results
+    const allVideos = [];
+    for (const smartQuery of smartQueries.slice(0, 3)) { // Limit to 3 queries to avoid rate limits
+      const videos = await youtubeService.searchVideos(smartQuery, 15);
+      allVideos.push(...videos);
+    }
+
+    // Remove duplicates and limit results
+    const uniqueVideos = allVideos
+      .filter((video, index, self) =>
+        index === self.findIndex(v => v.id === video.id)
+      )
+      .slice(0, 25);
+
+    if (uniqueVideos.length === 0) {
       return NextResponse.json({
         playlist: null,
         message: 'No videos found for this query. Please try a different search term.'
       });
     }
 
+    // Categorize all videos in a single batched LLM call
+    const difficulties = await groqService.categorizeDifficultyBatch(
+      uniqueVideos.map(v => ({ title: v.title, description: v.description }))
+    );
+
+    const categorizedVideos = uniqueVideos.map((video, index) => ({
+      ...video,
+      order: index + 1,
+      difficulty: difficulties[index] ?? 'beginner',
+      duration: youtubeService.formatDuration(video.duration),
+    }));
+
+    // Sort videos by difficulty (beginner -> intermediate -> advanced)
+    const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
+    const sortedVideos = categorizedVideos.sort((a, b) => {
+      const aDiff = difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 1;
+      const bDiff = difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 1;
+      return aDiff - bDiff;
+    });
+
+    // Save videos to database if user is authenticated
     if (session?.user?.id) {
-      for (const video of playlist.videos) {
+      const videoPromises = sortedVideos.map(async (video) => {
         try {
-          await prisma.video.upsert({
+          return await prisma.video.upsert({
             where: {
               youtubeId: video.id,
             },
@@ -49,13 +89,28 @@ export async function POST(request: NextRequest) {
           });
         } catch (error) {
           console.error(`Error saving video ${video.id}:`, error);
+          return null;
         }
-      }
+      });
+
+      await Promise.allSettled(videoPromises);
     }
 
+    // Create playlist
+    const playlistData = {
+      title: `${query} - Complete Learning Path`,
+      description: `AI-curated learning playlist for ${query} with ${sortedVideos.length} videos`,
+      query,
+      language,
+      difficulty,
+      totalVideos: sortedVideos.length,
+      completedVideos: 0,
+      videos: sortedVideos,
+    };
+
     return NextResponse.json({ 
-      playlist,
-      message: `Found ${playlist.totalVideos} videos for "${query}"`
+      playlist: playlistData,
+      message: `Found ${sortedVideos.length} videos for "${query}"`
     });
 
   } catch (error) {

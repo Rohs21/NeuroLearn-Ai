@@ -2,20 +2,6 @@ import Groq from 'groq-sdk';
 
 const MODEL = 'llama-3.3-70b-versatile';
 
-export type LearningRoadmapStep = {
-  title: string;
-  focus: string;
-  searchQuery: string;
-  rationale: string;
-  keywords: string[];
-};
-
-export type LearningRoadmap = {
-  topic: string;
-  title: string;
-  steps: LearningRoadmapStep[];
-};
-
 // Escapes literal newlines/tabs/carriage-returns inside JSON string values.
 // LLMs often embed raw markdown newlines in strings, making JSON.parse fail.
 function sanitizeJsonLiterals(raw: string): string {
@@ -35,66 +21,6 @@ function sanitizeJsonLiterals(raw: string): string {
     out += ch;
   }
   return out;
-}
-
-function extractJsonObject(raw: string): string | null {
-  const start = raw.indexOf('{');
-  const end = raw.lastIndexOf('}');
-
-  if (start === -1 || end === -1 || end <= start) {
-    return null;
-  }
-
-  return raw.slice(start, end + 1);
-}
-
-function buildFallbackRoadmap(topic: string, language = 'en', difficulty = 'beginner'): LearningRoadmap {
-  const normalizedTopic = topic.trim();
-  const languageSuffix = language && language !== 'en' ? ` in ${language}` : '';
-
-  const steps: LearningRoadmapStep[] = [
-    {
-      title: `Orientation to ${normalizedTopic}`,
-      focus: `Build the basic mental model for ${normalizedTopic} and understand the core vocabulary.`,
-      searchQuery: `${normalizedTopic} introduction basics${languageSuffix}`,
-      rationale: 'Start with the simplest explainer so the learner has context before moving deeper.',
-      keywords: [normalizedTopic, 'introduction', 'basics'],
-    },
-    {
-      title: `Core concepts of ${normalizedTopic}`,
-      focus: `Learn the foundational ideas that show up in almost every practical use of ${normalizedTopic}.`,
-      searchQuery: `${normalizedTopic} core concepts tutorial${languageSuffix}`,
-      rationale: 'This step builds the real working vocabulary required to understand later lessons.',
-      keywords: [normalizedTopic, 'core concepts', 'tutorial'],
-    },
-    {
-      title: `Hands-on practice with ${normalizedTopic}`,
-      focus: `See the concepts applied in a guided example or small project.`,
-      searchQuery: `${normalizedTopic} practical tutorial project${languageSuffix}`,
-      rationale: 'A practical lesson helps convert theory into usable skill.',
-      keywords: [normalizedTopic, 'practical', 'project'],
-    },
-    {
-      title: `Common workflows in ${normalizedTopic}`,
-      focus: `Learn the typical patterns, tools, or workflows that people use in real work.`,
-      searchQuery: `${normalizedTopic} workflow best practices${languageSuffix}`,
-      rationale: 'The learner should now be ready for the patterns used in real projects.',
-      keywords: [normalizedTopic, 'workflow', 'best practices'],
-    },
-    {
-      title: `Advanced understanding of ${normalizedTopic}`,
-      focus: `Explore deeper details, tradeoffs, and edge cases after the fundamentals are clear.`,
-      searchQuery: `${normalizedTopic} advanced concepts${languageSuffix}`,
-      rationale: 'Only after the foundations are stable should the playlist move to advanced material.',
-      keywords: [normalizedTopic, 'advanced', 'tradeoffs'],
-    },
-  ];
-
-  return {
-    topic: normalizedTopic,
-    title: `${normalizedTopic} Learning Roadmap`,
-    steps: difficulty === 'advanced' ? steps.slice(1) : steps,
-  };
 }
 
 const KEYS = [
@@ -125,78 +51,6 @@ export class GroqService {
       }
     }
     throw lastError;
-  }
-
-  async generateLearningRoadmap(
-    topic: string,
-    language = 'en',
-    difficulty = 'beginner'
-  ): Promise<LearningRoadmap> {
-    try {
-      const prompt = `You are creating an internal learning roadmap for a YouTube-based learning assistant.
-
-Topic: ${topic}
-Language: ${language}
-Difficulty: ${difficulty}
-
-Return ONLY valid JSON with this exact structure:
-{
-  "topic": "${topic}",
-  "title": "...",
-  "steps": [
-    {
-      "title": "...",
-      "focus": "...",
-      "searchQuery": "...",
-      "rationale": "...",
-      "keywords": ["...", "..."]
-    }
-  ]
-}
-
-Rules:
-- Generate 5 to 7 steps.
-- Order steps from beginner to advanced.
-- Every step must be distinct and progressively build on the previous step.
-- Make the searchQuery concrete enough for YouTube search.
-- Do not repeat the same subtopic more than once.
-- Keep titles short and instructional.
-- Do not include markdown or any explanation outside the JSON.`;
-
-      const text = await this.complete(prompt, 2048);
-      const json = extractJsonObject(text);
-      if (!json) {
-        return buildFallbackRoadmap(topic, language, difficulty);
-      }
-
-      const parsed = JSON.parse(sanitizeJsonLiterals(json));
-      const steps = Array.isArray(parsed.steps)
-        ? parsed.steps
-            .map((step: any) => ({
-              title: String(step?.title || '').trim(),
-              focus: String(step?.focus || '').trim(),
-              searchQuery: String(step?.searchQuery || '').trim(),
-              rationale: String(step?.rationale || '').trim(),
-              keywords: Array.isArray(step?.keywords)
-                ? step.keywords.map((keyword: any) => String(keyword).trim()).filter(Boolean)
-                : [],
-            }))
-            .filter((step: LearningRoadmapStep) => step.title && step.focus && step.searchQuery)
-        : [];
-
-      if (steps.length < 3) {
-        return buildFallbackRoadmap(topic, language, difficulty);
-      }
-
-      return {
-        topic: String(parsed.topic || topic).trim() || topic.trim(),
-        title: String(parsed.title || `${topic} Learning Roadmap`).trim(),
-        steps,
-      };
-    } catch (error) {
-      console.error('Groq generateLearningRoadmap error:', error);
-      return buildFallbackRoadmap(topic, language, difficulty);
-    }
   }
 
   async generateVideoContent(
