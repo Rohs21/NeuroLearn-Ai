@@ -1,4 +1,6 @@
 import Groq from 'groq-sdk';
+import { GeminiService } from './gemini';
+import { GrokService } from './grok';
 
 const MODEL = 'llama-3.3-70b-versatile';
 
@@ -59,6 +61,20 @@ export class GroqService {
     transcript?: string
   ): Promise<{ summary: string; quiz: any[]; flashcards: { front: string; back: string }[] }> {
     try {
+      // Prefer Grok if configured
+      if (process.env.GROK_API_KEY) {
+        const grok = new GrokService();
+        return await grok.generateVideoContent(title, description, transcript);
+      }
+
+      // If no GROQ API keys are configured, fall back to Gemini (Google) if available.
+      if (KEYS.length === 0 && process.env.GEMINI_API_KEY) {
+        const gem = new GeminiService();
+        const summary = await gem.generateVideoSummary(title, description);
+        const quiz = await gem.generateQuiz(title, description);
+        return { summary, quiz, flashcards: [] };
+      }
+
       const content = transcript && transcript.length > 200
         ? `Transcript:\n${transcript.slice(0, 3000)}`
         : `Description:\n${description.slice(0, 800)}`;
