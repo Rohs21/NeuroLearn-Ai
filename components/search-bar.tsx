@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SearchBarProps {
-  onSearch: (query: string, language: string, difficulty: string) => void;
+  onSearch: (query: string, language: string, difficulty: string, outputType: 'playlist' | 'document') => void;
+  outputType: 'playlist' | 'document';
+  onOutputTypeChange: (value: 'playlist' | 'document') => void;
   isLoading?: boolean;
 }
 
-export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
+export function SearchBar({ onSearch, outputType, onOutputTypeChange, isLoading }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [language, setLanguage] = useState('en');
   const [difficulty, setDifficulty] = useState('beginner');
@@ -19,7 +21,7 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      onSearch(query.trim(), language, difficulty);
+      onSearch(query.trim(), language, difficulty, outputType);
     }
   };
 
@@ -68,6 +70,16 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
               </SelectContent>
             </Select>
 
+            <Select value={outputType} onValueChange={(value) => onOutputTypeChange(value as 'playlist' | 'document')}>
+              <SelectTrigger className="w-[120px] h-12 border-0 bg-transparent shadow-none hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl text-sm font-medium focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none transition-colors">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl border border-zinc-200 dark:border-white/10 shadow-xl">
+                <SelectItem value="playlist" className="rounded-lg">Playlist</SelectItem>
+                <SelectItem value="document" className="rounded-lg">Document</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Select value={difficulty} onValueChange={setDifficulty}>
               <SelectTrigger className="w-[130px] h-12 border-0 bg-transparent shadow-none hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl text-sm font-medium focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none transition-colors">
                 <SelectValue />
@@ -88,7 +100,7 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
-                <span className="hidden sm:inline">Search</span>
+                <span className="hidden sm:inline">{outputType === 'document' ? 'Generate' : 'Search'}</span>
               )}
               {!isLoading && <Search className="h-4 w-4 sm:hidden" />}
             </Button>
@@ -103,7 +115,7 @@ export function SearchBar({ onSearch, isLoading }: SearchBarProps) {
             key={popularQuery}
             onClick={() => {
               setQuery(popularQuery);
-              onSearch(popularQuery, language, difficulty);
+                onSearch(popularQuery, language, difficulty, outputType);
             }}
             disabled={isLoading}
             className="px-4 py-2 rounded-full text-xs sm:text-sm font-medium bg-white/60 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/10 hover:text-zinc-900 dark:hover:text-white transition-all active:scale-[0.98]"

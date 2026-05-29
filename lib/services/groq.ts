@@ -144,6 +144,132 @@ Return ONLY valid JSON, nothing else.`;
     return result.flashcards;
   }
 
+  async generateLearningRoadmap(input: {
+    topic: string;
+    language: string;
+    difficulty: string;
+    contextVideos: { title: string; description: string }[];
+    references: { title: string; url: string; note: string }[];
+  }): Promise<{
+    title: string;
+    summary: string;
+    level: string;
+    estimatedTime: string;
+    documentMarkdown: string;
+    outline: {
+      title: string;
+      summary: string;
+      whyItMatters?: string;
+      codeExample?: string;
+      resources?: { title: string; url: string }[];
+      children?: any[];
+    }[];
+    nextSteps: string[];
+    references: { title: string; url: string; note: string }[];
+  }> {
+    try {
+      const context = input.contextVideos
+        .slice(0, 8)
+        .map((video, index) => `${index + 1}. ${video.title}\n   ${video.description.slice(0, 160)}`)
+        .join('\n');
+
+      const refs = input.references
+        .map((reference, index) => `${index + 1}. ${reference.title} - ${reference.url} (${reference.note})`)
+        .join('\n');
+
+      const prompt = `You are a senior curriculum designer and technical educator.
+Create a polished learning document for the topic below.
+
+Topic: ${input.topic}
+Language: ${input.language}
+Difficulty: ${input.difficulty}
+
+Use the video context and the reference links to build a deeply structured roadmap.
+The document must be practical, accurate, and ordered from fundamentals to advanced topics.
+If the topic is technical, include code examples where they help.
+Use markdown for the document text with headings, bullets, and callouts.
+
+Video context:
+${context || 'No video context provided.'}
+
+Available references:
+${refs || 'No references provided.'}
+
+Return only valid JSON in this exact shape:
+{
+  "title": "...",
+  "summary": "...",
+  "level": "...",
+  "estimatedTime": "...",
+  "documentMarkdown": "# ...",
+  "outline": [
+    {
+      "title": "...",
+      "summary": "...",
+      "whyItMatters": "...",
+      "codeExample": "...",
+      "resources": [{ "title": "...", "url": "..." }],
+      "children": [
+        {
+          "title": "...",
+          "summary": "...",
+          "whyItMatters": "...",
+          "codeExample": "...",
+          "resources": [{ "title": "...", "url": "..." }]
+        }
+      ]
+    }
+  ],
+  "nextSteps": ["..."],
+  "references": [
+    { "title": "...", "url": "...", "note": "..." }
+  ]
+}
+
+Guidelines:
+- Make the outline tree-like with 4 to 6 top-level branches.
+- Each branch should have concise but useful summaries.
+- Keep references to the URLs that were provided when relevant.
+- Include a few code examples for technical concepts.
+- The markdown document should feel like a polished study guide, not a transcript.
+- Keep the language clear and instructional.
+`;
+
+      const text = await this.complete(prompt, 4096);
+      const match = text.match(/\{[\s\S]*\}/);
+
+      if (!match) {
+        throw new Error('No roadmap JSON returned');
+      }
+
+      const parsed = JSON.parse(sanitizeJsonLiterals(match[0]));
+
+      return {
+        title: parsed.title ?? `${input.topic} Learning Roadmap`,
+        summary: parsed.summary ?? `A structured roadmap for ${input.topic}.`,
+        level: parsed.level ?? input.difficulty,
+        estimatedTime: parsed.estimatedTime ?? '4-8 weeks',
+        documentMarkdown: parsed.documentMarkdown ?? `# ${input.topic}\n\nStudy roadmap unavailable.`,
+        outline: Array.isArray(parsed.outline) ? parsed.outline : [],
+        nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps : [],
+        references: Array.isArray(parsed.references) ? parsed.references : input.references,
+      };
+    } catch (error) {
+      console.error('Groq generateLearningRoadmap error:', error);
+
+      return {
+        title: `${input.topic} Learning Roadmap`,
+        summary: `A structured roadmap for ${input.topic}.`,
+        level: input.difficulty,
+        estimatedTime: '4-8 weeks',
+        documentMarkdown: `# ${input.topic} Learning Roadmap\n\nA detailed roadmap could not be generated right now.`,
+        outline: [],
+        nextSteps: ['Review the reference links and retry the roadmap generation.'],
+        references: input.references,
+      };
+    }
+  }
+
   async enhanceJobKeywords(jobTitle: string, jobDescription: string) {
     try {
       const prompt = `You are an AI career and learning assistant. Your task is to analyze a job description and provide a structured learning plan.

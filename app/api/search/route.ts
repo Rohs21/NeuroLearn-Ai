@@ -5,13 +5,14 @@ import { YouTubeService } from '@/lib/services/youtube';
 import { GroqService } from '@/lib/services/groq';
 import prisma from '@/lib/prisma';
 import { Session } from "next-auth"
+import { buildReferenceLinks } from '@/lib/roadmap/reference-links';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions) as Session & { user: { id: string } }
-    const { query, language = 'en', difficulty = 'beginner' } = await request.json();
+    const { query, language = 'en', difficulty = 'beginner', outputType = 'playlist' } = await request.json();
 
     if (!query) {
       return NextResponse.json({ error: 'Query is required' }, { status: 400 });
@@ -64,6 +65,27 @@ export async function POST(request: NextRequest) {
       return aDiff - bDiff;
     });
 
+    const references = buildReferenceLinks(query);
+
+    const playlistData = {
+      title: `${query} - Complete Learning Path`,
+      description: `AI-curated learning playlist for ${query} with ${sortedVideos.length} videos`,
+      query,
+      language,
+      difficulty,
+      totalVideos: sortedVideos.length,
+      completedVideos: 0,
+      videos: sortedVideos,
+    };
+
+    const roadmap = await groqService.generateLearningRoadmap({
+      topic: query,
+      language,
+      difficulty,
+      contextVideos: sortedVideos,
+      references,
+    });
+
     // Save videos to database if user is authenticated
     if (session?.user?.id) {
       const videoPromises = sortedVideos.map(async (video) => {
@@ -96,20 +118,10 @@ export async function POST(request: NextRequest) {
       await Promise.allSettled(videoPromises);
     }
 
-    // Create playlist
-    const playlistData = {
-      title: `${query} - Complete Learning Path`,
-      description: `AI-curated learning playlist for ${query} with ${sortedVideos.length} videos`,
-      query,
-      language,
-      difficulty,
-      totalVideos: sortedVideos.length,
-      completedVideos: 0,
-      videos: sortedVideos,
-    };
-
     return NextResponse.json({ 
       playlist: playlistData,
+      document: roadmap,
+      outputType,
       message: `Found ${sortedVideos.length} videos for "${query}"`
     });
 

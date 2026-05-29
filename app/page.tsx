@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { SearchBar } from '@/components/search-bar';
 import { PlaylistGrid } from '@/components/playlist-grid';
+import { LearningRoadmapView } from '@/components/learning-roadmap';
 import { Navbar } from '@/components/navbar';
 import { AnimateSection } from '@/components/animate-section';
 import { Button } from '@/components/ui/button';
@@ -187,6 +188,8 @@ function TestimonialsSection({ testimonials, hoveredTestimonial, setHoveredTesti
 
 export default function HomePage() {
   const [playlist, setPlaylist]   = useState(null);
+  const [documentRoadmap, setDocumentRoadmap] = useState<any>(null);
+  const [outputType, setOutputType] = useState<'playlist' | 'document'>('playlist');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError]         = useState('');
   const [activeTab, setActiveTab] = useState(0);
@@ -202,21 +205,10 @@ export default function HomePage() {
   const { status } = useSession();
   const isAuthenticated = mounted && status === 'authenticated';
 
-  const handleSearch = async (query: string, language: string, difficulty: string) => {
-    setIsLoading(true); setError(''); setPlaylist(null);
-    try {
-      const res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ query, language, difficulty }) });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Search failed');
-      if (data.playlist) {
-        try {
-          const saveRes = await fetch('/api/playlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ title: `Learning Path: ${query}`, description: `AI-curated learning path for ${query} (${language}, ${difficulty})`, videos: data.playlist }) });
-          if (saveRes.ok) { const saved = await saveRes.json(); router.push(`/playlist/${saved.id}`); return; }
-          setPlaylist(data.playlist);
-        } catch { setPlaylist(data.playlist); }
-      } else { setError(data.message || 'No videos found.'); }
-    } catch { setError('Failed to search. Please try again.'); }
-    finally { setIsLoading(false); }
+  const handleSearch = async (query: string, language: string, difficulty: string, outputType: 'playlist' | 'document') => {
+    // Navigate to dedicated search results page which will perform the search
+    const url = `/search?query=${encodeURIComponent(query)}&language=${encodeURIComponent(language)}&difficulty=${encodeURIComponent(difficulty)}&outputType=${encodeURIComponent(outputType)}`;
+    router.push(url);
   };
 
   const handleVideoPlay = (videoId: string) => {
@@ -271,7 +263,7 @@ return (
       <Navbar />
 
       {/* ── HERO ───────── */}
-      {!playlist && !isLoading && !error && (
+      {!playlist && !documentRoadmap && !isLoading && !error && (
         <div className="relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-8 min-h-[calc(100vh-65px)] flex flex-col justify-center">
           <div className="text-center max-w-4xl mx-auto mb-8 sm:mb-12 px-2">
             <div className="flex items-center justify-center gap-2 mb-3 sm:mb-4">
@@ -288,7 +280,12 @@ return (
             </p>
           </div>
           <div className="mb-10 sm:mb-16">
-            <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+            <SearchBar
+              onSearch={handleSearch}
+              outputType={outputType}
+              onOutputTypeChange={setOutputType}
+              isLoading={isLoading}
+            />
           </div>
         </div>
       )}
@@ -336,8 +333,17 @@ return (
         </div>
       )}
 
+      {/* ── DOCUMENT ───────────────────────────────────────── */}
+      {documentRoadmap && !isLoading && (
+        <div className="relative z-10 bg-white dark:bg-[#09090b] min-h-[calc(100vh-65px)] w-full">
+          <div className="container mx-auto px-4 py-10 sm:py-16">
+            <LearningRoadmapView roadmap={documentRoadmap} />
+          </div>
+        </div>
+      )}
+
       {/* ══ MARKETING SECTIONS ══════════════════════════════ */}
-      {!playlist && !isLoading && !error && (
+      {!playlist && !documentRoadmap && !isLoading && !error && (
         <div className="bg-white dark:bg-[#09090b] overflow-x-hidden">
 
           {/* 1. TOPICS STRIP */}
@@ -350,7 +356,7 @@ return (
                 {TOPICS.map((topic, i) => (
                   <AnimateSection key={topic} delay={i * 40}>
                     <button
-                      onClick={() => handleSearch(topic, 'Any', 'Beginner')}
+                      onClick={() => handleSearch(topic, 'Any', 'Beginner', outputType)}
                       className="flex items-center gap-2 bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-white/10 rounded-xl px-5 py-2.5 text-sm font-medium text-zinc-800 dark:text-white transition-all hover:border-zinc-300 dark:hover:border-white/25 hover:scale-[1.03] active:scale-[0.97]"
                     >
                       <BookOpen className="h-3.5 w-3.5 text-zinc-400 dark:text-zinc-500" />
@@ -484,7 +490,7 @@ return (
             <div className="max-w-5xl mx-auto">
               <AnimateSection className="text-center mb-14">
                 <SectionLabel>What Makes Us Unique</SectionLabel>
-                <SectionHeading>Everything you need.<br />Nothing you don't.</SectionHeading>
+                <SectionHeading>Everything you need.<br />Nothing you don&apos;t.</SectionHeading>
                 <SectionSub>Six features working together so you spend time learning — not figuring out where to start.</SectionSub>
               </AnimateSection>
 
