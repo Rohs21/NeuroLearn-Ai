@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { LearningRoadmapView } from '@/components/learning-roadmap';
 import { PlaylistGrid } from '@/components/playlist-grid';
 import { Navbar } from '@/components/navbar';
 import { Button } from '@/components/ui/button';
 
-export default function SearchResultsPage() {
+function SearchResultsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -108,5 +108,13 @@ export default function SearchResultsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SearchResultsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SearchResultsContent />
+    </Suspense>
   );
 }

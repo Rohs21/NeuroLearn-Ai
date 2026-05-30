@@ -5,12 +5,15 @@ import { useRouter } from "next/navigation";
 import { SearchBar } from "@/components/search-bar";
 
 type SearchBarAuthProps = {
-  onSearch: (query: string, language: string, difficulty: string) => void;
+  onSearch: (query: string, language: string, difficulty: string, outputType: "playlist" | "document") => void;
+  outputType: "playlist" | "document";
+  onOutputTypeChange: (value: "playlist" | "document") => void;
+  isLoading?: boolean;
   [key: string]: any;
 };
 
 export function SearchBarAuth(props: SearchBarAuthProps) {
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const [error, setError] = useState("");
   const [isMounted, setIsMounted] = useState(false);
   const router = useRouter();
@@ -19,14 +22,14 @@ export function SearchBarAuth(props: SearchBarAuthProps) {
     setIsMounted(true);
   }, []);
 
-  const handleSearch = (query: string, language: string, difficulty: string) => {
+  const handleSearch = (query: string, language: string, difficulty: string, outputType: "playlist" | "document") => {
     if (status !== "authenticated") {
       setError("You must be signed in to search.");
       router.push("/auth/signin");
       return;
     }
     setError("");
-    props.onSearch(query, language, difficulty);
+    props.onSearch(query, language, difficulty, outputType);
   };
 
   if (!isMounted) {
