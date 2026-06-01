@@ -5,25 +5,36 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter"
 import prisma from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 
-// Basic environment checks to help diagnose production issues where
-// NextAuth requires `NEXTAUTH_URL` and `NEXTAUTH_SECRET` to be set.
-const _nextAuthUrl = process.env.NEXTAUTH_URL
+// Dynamically construct NEXTAUTH_URL for production
+const getNextAuthUrl = (): string => {
+  if (process.env.NEXTAUTH_URL) {
+    return process.env.NEXTAUTH_URL
+  }
+  
+  // Vercel automatic URL detection
+  if (process.env.VERCEL_URL) {
+    const protocol = process.env.VERCEL_ENV === 'production' ? 'https' : 'http'
+    return `${protocol}://${process.env.VERCEL_URL}`
+  }
+  
+  // Fallback to localhost for development
+  return 'http://localhost:3000'
+}
+
+const nextAuthUrl = getNextAuthUrl()
 const _nextAuthSecretSet = !!process.env.NEXTAUTH_SECRET
-if (!_nextAuthUrl || !_nextAuthSecretSet) {
+
+if (!_nextAuthSecretSet) {
   console.warn(
     '[NextAuth][env-check] NEXTAUTH_URL=%s NEXTAUTH_SECRET_SET=%s',
-    _nextAuthUrl || 'MISSING',
+    nextAuthUrl,
     _nextAuthSecretSet
   )
 }
 
 export const authOptions: any = {
-  trustHost: true,
-  useSecureCookies: process.env.NODE_ENV === 'production',
-  adapter: PrismaAdapter(prisma),
-  session: {
-    strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+  pages: {
+    signIn: '/auth/signin',
   },
   providers: [
     CredentialsProvider({
@@ -65,9 +76,14 @@ export const authOptions: any = {
       }
     })
   ],
-  pages: {
-    signIn: "/auth/signin"
+  adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
+  useSecureCookies: process.env.NODE_ENV === 'production',
   callbacks: {
     async jwt({ token, user }: { token: Record<string, unknown>, user?: User }) {
       if (user) {

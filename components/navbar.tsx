@@ -62,7 +62,7 @@ export function Navbar() {
                   Dashboard
                 </button>
                 <button
-                  onClick={() => signOut({ callbackUrl: '/' })}
+                  onClick={() => signOut({ redirect: true, callbackUrl: '/' })}
                   className="text-sm bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-xl px-4 sm:px-5 py-2 font-medium hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
                 >
                   Sign Out
