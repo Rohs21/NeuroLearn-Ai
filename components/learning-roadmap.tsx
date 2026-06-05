@@ -146,20 +146,7 @@ export function LearningRoadmapView({ roadmap }: { roadmap: LearningRoadmap }) {
         </div>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <Card className="border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-2xl shadow-xl overflow-hidden">
-          <CardContent className="p-6 sm:p-8 space-y-6">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Document</p>
-              <h2 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-white">What to learn and how to learn it</h2>
-            </div>
-
-            <article className="prose prose-zinc dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-7 prose-li:marker:text-primary">
-              <ReactMarkdown>{roadmap.documentMarkdown}</ReactMarkdown>
-            </article>
-          </CardContent>
-        </Card>
-
+      <div className="grid gap-8 lg:grid-cols-[minmax(320px,0.65fr)_minmax(0,1.35fr)]">
         <div className="space-y-6">
           <Card className="border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-2xl shadow-xl">
             <CardContent className="p-6 space-y-4">
@@ -213,6 +200,19 @@ export function LearningRoadmapView({ roadmap }: { roadmap: LearningRoadmap }) {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-2xl shadow-xl overflow-hidden">
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">Document</p>
+              <h2 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-white">What to learn and how to learn it</h2>
+            </div>
+
+            <article className="prose prose-zinc dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-7 prose-li:marker:text-primary">
+              <ReactMarkdown>{roadmap.documentMarkdown}</ReactMarkdown>
+            </article>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

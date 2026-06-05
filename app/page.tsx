@@ -432,7 +432,7 @@ return (
                 {LEARNING_PATHS.map(({ title, desc, icon: Icon }, i) => (
                   <AnimateSection key={title} delay={i * 80}>
                     <button
-                      onClick={() => handleSearch(title, 'Any', 'Beginner', outputType)}
+                      onClick={() => handleSearch(title, 'Any', 'Beginner')}
                       className="group w-full text-left bg-white dark:bg-zinc-900 hover:bg-zinc-50 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-white/10 hover:border-zinc-300 dark:hover:border-white/20 rounded-2xl p-5 transition-all hover:scale-[1.02] active:scale-[0.98] h-full"
                     >
                       <div className="flex items-start justify-between mb-10">
