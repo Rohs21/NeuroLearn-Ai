@@ -12,7 +12,7 @@ import { Navbar } from '@/components/navbar';
 function WatchPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const videoId = searchParams.get('v');
+  const videoId = searchParams?.get('v') ?? null;
   const [playlistData, setPlaylistData] = useState(null);
   const [playlistId, setPlaylistId] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);

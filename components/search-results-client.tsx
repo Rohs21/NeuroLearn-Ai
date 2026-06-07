@@ -11,10 +11,10 @@ export default function SearchResultsClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const query = searchParams.get('query') || '';
-  const language = searchParams.get('language') || 'en';
-  const difficulty = searchParams.get('difficulty') || 'beginner';
-  const outputType = (searchParams.get('outputType') as 'playlist' | 'document') || 'playlist';
+  const query = searchParams?.get('query') || '';
+  const language = searchParams?.get('language') || 'en';
+  const difficulty = searchParams?.get('difficulty') || 'beginner';
+  const outputType = (searchParams?.get('outputType') as 'playlist' | 'document') || 'playlist';
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');

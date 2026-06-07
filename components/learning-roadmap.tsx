@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { BookOpen, ExternalLink, Layers3, Sparkles } from 'lucide-react';
@@ -15,6 +16,10 @@ export type RoadmapNode = {
   title: string;
   summary: string;
   whyItMatters?: string;
+  prerequisites?: string[];
+  keyTakeaways?: string[];
+  commonMistakes?: string[];
+  deepDiveMarkdown?: string;
   codeExample?: string;
   resources?: { title: string; url: string }[];
   children?: RoadmapNode[];
@@ -29,14 +34,16 @@ export type LearningRoadmap = {
   outline: RoadmapNode[];
   nextSteps: string[];
   references: RoadmapReference[];
+  coverageTopics?: string[];
 };
 
-function RoadmapBranch({ node, index }: { node: RoadmapNode; index: number }) {
+function RoadmapBranch({ node, index, onSelect, selectedTitle }: { node: RoadmapNode; index: number; onSelect: (node: RoadmapNode) => void; selectedTitle?: string }) {
   const hasChildren = Boolean(node.children?.length);
+  const isSelected = selectedTitle === node.title;
 
   return (
     <AccordionItem value={`${index}-${node.title}`} className="border-white/10">
-      <AccordionTrigger className="text-left gap-3 py-4 hover:no-underline">
+      <AccordionTrigger className={`text-left gap-3 py-4 hover:no-underline ${isSelected ? 'bg-primary/5' : ''}`} onClick={() => onSelect(node)}>
         <div className="flex items-start gap-3 text-left">
           <div className="mt-1 h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
             {String(index + 1).padStart(2, '0')}
@@ -53,6 +60,41 @@ function RoadmapBranch({ node, index }: { node: RoadmapNode; index: number }) {
             <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 p-4 text-sm text-zinc-600 dark:text-zinc-300">
               {node.whyItMatters}
             </div>
+          )}
+
+          {(node.prerequisites?.length || node.keyTakeaways?.length || node.commonMistakes?.length) ? (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {node.prerequisites?.length ? (
+                <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-2">Prerequisites</p>
+                  <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc pl-4">
+                    {node.prerequisites.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+              {node.keyTakeaways?.length ? (
+                <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-2">Key Takeaways</p>
+                  <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc pl-4">
+                    {node.keyTakeaways.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+              {node.commonMistakes?.length ? (
+                <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-2">Common Mistakes</p>
+                  <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc pl-4">
+                    {node.commonMistakes.map((item) => <li key={item}>{item}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {node.deepDiveMarkdown && (
+            <article className="prose prose-zinc dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-p:leading-7 prose-li:marker:text-primary">
+              <ReactMarkdown>{node.deepDiveMarkdown}</ReactMarkdown>
+            </article>
           )}
 
           {node.codeExample && (
@@ -87,7 +129,7 @@ function RoadmapBranch({ node, index }: { node: RoadmapNode; index: number }) {
             <div className="ml-3 border-l border-zinc-200 dark:border-white/10 pl-4">
               <Accordion type="single" collapsible className="w-full">
                 {node.children!.map((child, childIndex) => (
-                  <RoadmapBranch key={child.title} node={child} index={childIndex} />
+                  <RoadmapBranch key={child.title} node={child} index={childIndex} onSelect={onSelect} selectedTitle={selectedTitle} />
                 ))}
               </Accordion>
             </div>
@@ -99,6 +141,12 @@ function RoadmapBranch({ node, index }: { node: RoadmapNode; index: number }) {
 }
 
 export function LearningRoadmapView({ roadmap }: { roadmap: LearningRoadmap }) {
+  const [selectedNode, setSelectedNode] = useState<RoadmapNode | null>(roadmap.outline[0] ?? null);
+
+  useEffect(() => {
+    setSelectedNode(roadmap.outline[0] ?? null);
+  }, [roadmap]);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="relative overflow-hidden rounded-[2rem] border border-zinc-200 dark:border-white/10 bg-white/75 dark:bg-zinc-900/70 backdrop-blur-2xl shadow-xl p-6 sm:p-8">
@@ -146,6 +194,21 @@ export function LearningRoadmapView({ roadmap }: { roadmap: LearningRoadmap }) {
         </div>
       </div>
 
+      {roadmap.coverageTopics?.length ? (
+        <Card className="border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-2xl shadow-xl">
+          <CardContent className="p-6 space-y-3">
+            <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Hot Topics Covered</h2>
+            <div className="flex flex-wrap gap-2">
+              {roadmap.coverageTopics.map((topic) => (
+                <span key={topic} className="rounded-full border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 px-3 py-1 text-sm text-zinc-700 dark:text-zinc-200">
+                  {topic}
+                </span>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <div className="grid gap-8 lg:grid-cols-[minmax(320px,0.65fr)_minmax(0,1.35fr)]">
         <div className="space-y-6">
           <Card className="border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-2xl shadow-xl">
@@ -156,7 +219,7 @@ export function LearningRoadmapView({ roadmap }: { roadmap: LearningRoadmap }) {
               </div>
               <Accordion type="single" collapsible className="w-full">
                 {roadmap.outline.map((node, index) => (
-                  <RoadmapBranch key={node.title} node={node} index={index} />
+                  <RoadmapBranch key={node.title} node={node} index={index} onSelect={setSelectedNode} selectedTitle={selectedNode?.title} />
                 ))}
               </Accordion>
             </CardContent>
@@ -208,9 +271,51 @@ export function LearningRoadmapView({ roadmap }: { roadmap: LearningRoadmap }) {
               <h2 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-white">What to learn and how to learn it</h2>
             </div>
 
-            <article className="prose prose-zinc dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-7 prose-li:marker:text-primary">
-              <ReactMarkdown>{roadmap.documentMarkdown}</ReactMarkdown>
-            </article>
+            {selectedNode ? (
+              <div className="space-y-6">
+                <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 p-5">
+                  <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Selected Topic</p>
+                  <h3 className="mt-2 text-2xl font-bold text-zinc-900 dark:text-white">{selectedNode.title}</h3>
+                  <p className="mt-2 text-zinc-600 dark:text-zinc-300 leading-relaxed">{selectedNode.summary}</p>
+                </div>
+
+                <article className="prose prose-zinc dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-7 prose-li:marker:text-primary">
+                  <ReactMarkdown>{selectedNode.deepDiveMarkdown || roadmap.documentMarkdown}</ReactMarkdown>
+                </article>
+
+                {selectedNode.codeExample ? (
+                  <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-zinc-950 text-zinc-100 overflow-hidden">
+                    <div className="px-4 py-2 border-b border-white/10 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+                      Code Example
+                    </div>
+                    <pre className="p-4 text-xs sm:text-sm overflow-x-auto whitespace-pre-wrap leading-relaxed">
+                      <code>{selectedNode.codeExample}</code>
+                    </pre>
+                  </div>
+                ) : null}
+
+                {selectedNode.resources?.length ? (
+                  <div className="grid gap-2">
+                    {selectedNode.resources.map((resource) => (
+                      <a
+                        key={resource.url}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 px-4 py-3 text-sm transition-all hover:border-primary/40 hover:shadow-lg"
+                      >
+                        <span className="font-medium text-zinc-700 dark:text-zinc-200">{resource.title}</span>
+                        <ExternalLink className="h-4 w-4 text-zinc-400 group-hover:text-primary" />
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <article className="prose prose-zinc dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-7 prose-li:marker:text-primary">
+                <ReactMarkdown>{roadmap.documentMarkdown}</ReactMarkdown>
+              </article>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -9,6 +9,56 @@ import { buildReferenceLinks } from '@/lib/roadmap/reference-links';
 
 export const dynamic = 'force-dynamic';
 
+function getCoveragePlan(query: string) {
+  const lowerQuery = query.toLowerCase();
+
+  if (/(react|reactjs|react\.js|next\.js|frontend|ui|javascript|typescript)/.test(lowerQuery)) {
+    return {
+      coverageInstructions: 'Cover React as a complete learning map. Explain the core mental model first, then the main APIs, then advanced patterns and ecosystem topics.',
+      coverageTopics: [
+        'React mental model and component architecture',
+        'JSX, props, and component composition',
+        'State management with useState',
+        'Side effects and useEffect',
+        'Callbacks, memoization, and useCallback/useMemo',
+        'Refs and DOM access with useRef',
+        'Context and global state',
+        'State lifting and prop drilling',
+        'Custom hooks and reusable logic',
+        'Forms and controlled components',
+        'Rendering lists, keys, and conditional UI',
+        'Performance, re-rendering, and optimization',
+        'Routing and data fetching patterns',
+        'Testing and debugging React apps',
+        'Common pitfalls and best practices',
+      ],
+    };
+  }
+
+  if (/(python|data science|machine learning|ai|deep learning|numpy|pandas)/.test(lowerQuery)) {
+    return {
+      coverageInstructions: 'Cover the subject end-to-end from fundamentals to practical workflows and advanced usage.',
+      coverageTopics: [
+        'Core language fundamentals',
+        'Data structures and control flow',
+        'Functions and modules',
+        'File handling and environments',
+        'Data analysis workflow',
+        'Numerical computing',
+        'Visualization',
+        'Machine learning workflow',
+        'Model evaluation and tuning',
+        'Common pitfalls and best practices',
+      ],
+    };
+  }
+
+  return {
+    coverageInstructions: 'Cover the canonical hot topics, prerequisites, common mistakes, and practical examples for this subject.',
+    coverageTopics: [],
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions) as Session & { user: { id: string } }
@@ -66,6 +116,7 @@ export async function POST(request: NextRequest) {
     });
 
     const references = buildReferenceLinks(query);
+    const coveragePlan = getCoveragePlan(query);
 
     const playlistData = {
       title: `${query} - Complete Learning Path`,
@@ -84,6 +135,8 @@ export async function POST(request: NextRequest) {
       difficulty,
       contextVideos: sortedVideos,
       references,
+      coverageInstructions: coveragePlan.coverageInstructions,
+      coverageTopics: coveragePlan.coverageTopics,
     });
 
     // Save videos to database if user is authenticated

@@ -150,6 +150,8 @@ Return ONLY valid JSON, nothing else.`;
     difficulty: string;
     contextVideos: { title: string; description: string }[];
     references: { title: string; url: string; note: string }[];
+    coverageTopics?: string[];
+    coverageInstructions?: string;
   }): Promise<{
     title: string;
     summary: string;
@@ -160,12 +162,17 @@ Return ONLY valid JSON, nothing else.`;
       title: string;
       summary: string;
       whyItMatters?: string;
+      prerequisites?: string[];
+      keyTakeaways?: string[];
+      commonMistakes?: string[];
+      deepDiveMarkdown?: string;
       codeExample?: string;
       resources?: { title: string; url: string }[];
       children?: any[];
     }[];
     nextSteps: string[];
     references: { title: string; url: string; note: string }[];
+    coverageTopics?: string[];
   }> {
     try {
       const context = input.contextVideos
@@ -188,12 +195,24 @@ Use the video context and the reference links to build a deeply structured roadm
 The document must be practical, accurate, and ordered from fundamentals to advanced topics.
 If the topic is technical, include code examples where they help.
 Use markdown for the document text with headings, bullets, and callouts.
+You must cover the topic comprehensively. Do not stop at a basic overview.
+If coverageTopics are provided, you must address every item in that list.
+If they are not provided, infer the canonical "hot topics" and include them as top-level branches or nested children.
+Prefer breadth first: cover the full landscape, then go deep on each branch.
+Every major branch should explain what it is, why it matters, when to use it, common mistakes, and one concrete example.
+For frameworks/libraries, include the standard core areas people expect to learn first.
 
 Video context:
 ${context || 'No video context provided.'}
 
 Available references:
 ${refs || 'No references provided.'}
+
+Coverage focus:
+${input.coverageInstructions || 'Cover the essential hot topics for this subject comprehensively.'}
+
+Required topics:
+${input.coverageTopics?.length ? input.coverageTopics.map((topic) => `- ${topic}`).join('\n') : 'Infer the canonical hot topics for the subject.'}
 
 Return only valid JSON in this exact shape:
 {
@@ -207,6 +226,10 @@ Return only valid JSON in this exact shape:
       "title": "...",
       "summary": "...",
       "whyItMatters": "...",
+      "prerequisites": ["..."],
+      "keyTakeaways": ["..."],
+      "commonMistakes": ["..."],
+      "deepDiveMarkdown": "### ...",
       "codeExample": "...",
       "resources": [{ "title": "...", "url": "..." }],
       "children": [
@@ -214,6 +237,10 @@ Return only valid JSON in this exact shape:
           "title": "...",
           "summary": "...",
           "whyItMatters": "...",
+          "prerequisites": ["..."],
+          "keyTakeaways": ["..."],
+          "commonMistakes": ["..."],
+          "deepDiveMarkdown": "### ...",
           "codeExample": "...",
           "resources": [{ "title": "...", "url": "..." }]
         }
@@ -223,12 +250,13 @@ Return only valid JSON in this exact shape:
   "nextSteps": ["..."],
   "references": [
     { "title": "...", "url": "...", "note": "..." }
-  ]
+  ],
+  "coverageTopics": ["..."]
 }
 
 Guidelines:
-- Make the outline tree-like with 4 to 6 top-level branches.
-- Each branch should have concise but useful summaries.
+- Make the outline tree-like with 6 to 10 top-level branches when the subject is broad.
+- Each branch should have concise but useful summaries and 2 to 4 nested children where helpful.
 - Keep references to the URLs that were provided when relevant.
 - Include a few code examples for technical concepts.
 - The markdown document should feel like a polished study guide, not a transcript.
@@ -253,6 +281,7 @@ Guidelines:
         outline: Array.isArray(parsed.outline) ? parsed.outline : [],
         nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps : [],
         references: Array.isArray(parsed.references) ? parsed.references : input.references,
+        coverageTopics: Array.isArray(parsed.coverageTopics) ? parsed.coverageTopics : input.coverageTopics,
       };
     } catch (error) {
       console.error('Groq generateLearningRoadmap error:', error);
@@ -266,6 +295,7 @@ Guidelines:
         outline: [],
         nextSteps: ['Review the reference links and retry the roadmap generation.'],
         references: input.references,
+        coverageTopics: input.coverageTopics,
       };
     }
   }
