@@ -185,22 +185,20 @@ Return ONLY valid JSON, nothing else.`;
         .join('\n');
 
       const prompt = `You are a senior curriculum designer and technical educator.
-Create a polished learning document for the topic below.
+Create a deeply practical, instructor-quality learning document for the topic below. The goal is to produce content that a learner can follow step-by-step and use immediately — include conceptual explanations, worked examples, exercises, and concrete implementation notes.
 
 Topic: ${input.topic}
 Language: ${input.language}
 Difficulty: ${input.difficulty}
 
-Use the video context and the reference links to build a deeply structured roadmap.
-The document must be practical, accurate, and ordered from fundamentals to advanced topics.
-If the topic is technical, include code examples where they help.
-Use markdown for the document text with headings, bullets, and callouts.
-You must cover the topic comprehensively. Do not stop at a basic overview.
-If coverageTopics are provided, you must address every item in that list.
-If they are not provided, infer the canonical "hot topics" and include them as top-level branches or nested children.
-Prefer breadth first: cover the full landscape, then go deep on each branch.
-Every major branch should explain what it is, why it matters, when to use it, common mistakes, and one concrete example.
-For frameworks/libraries, include the standard core areas people expect to learn first.
+Requirements:
+- The top-level document (documentMarkdown) should be a polished study guide with an executive summary and a table of contents.
+- The outline must be tree-structured. For each top-level branch (6–10 when broad) include 2–4 nested children where helpful.
+- For every branch and child, provide these fields: summary, whyItMatters, prerequisites, keyTakeaways, commonMistakes, deepDiveMarkdown, codeExample (if applicable), and resources.
+- deepDiveMarkdown must be substantive: at least 200–600 words per major branch (more for complex topics). Use headings, step-by-step instructions, diagrams (Mermaid allowed), annotated code blocks, and short exercises with suggested solutions.
+- When the topic is technical, include runnable or copy-pasteable code snippets with brief annotations and expected outputs.
+- Provide at least one practical mini-project or real-world exercise per major branch, with steps and a short rubric for evaluating success.
+- If coverageTopics were supplied, address each explicitly. If not, infer canonical hot topics and ensure they appear as branches or nested children.
 
 Video context:
 ${context || 'No video context provided.'}
@@ -211,10 +209,7 @@ ${refs || 'No references provided.'}
 Coverage focus:
 ${input.coverageInstructions || 'Cover the essential hot topics for this subject comprehensively.'}
 
-Required topics:
-${input.coverageTopics?.length ? input.coverageTopics.map((topic) => `- ${topic}`).join('\n') : 'Infer the canonical hot topics for the subject.'}
-
-Return only valid JSON in this exact shape:
+Return only valid JSON with this exact shape (deep fields required):
 {
   "title": "...",
   "summary": "...",
@@ -232,35 +227,19 @@ Return only valid JSON in this exact shape:
       "deepDiveMarkdown": "### ...",
       "codeExample": "...",
       "resources": [{ "title": "...", "url": "..." }],
-      "children": [
-        {
-          "title": "...",
-          "summary": "...",
-          "whyItMatters": "...",
-          "prerequisites": ["..."],
-          "keyTakeaways": ["..."],
-          "commonMistakes": ["..."],
-          "deepDiveMarkdown": "### ...",
-          "codeExample": "...",
-          "resources": [{ "title": "...", "url": "..." }]
-        }
-      ]
+      "children": [ /* same shape as parent */ ]
     }
   ],
   "nextSteps": ["..."],
-  "references": [
-    { "title": "...", "url": "...", "note": "..." }
-  ],
+  "references": [ { "title": "...", "url": "...", "note": "..." } ],
   "coverageTopics": ["..."]
 }
 
 Guidelines:
-- Make the outline tree-like with 6 to 10 top-level branches when the subject is broad.
-- Each branch should have concise but useful summaries and 2 to 4 nested children where helpful.
-- Keep references to the URLs that were provided when relevant.
-- Include a few code examples for technical concepts.
-- The markdown document should feel like a polished study guide, not a transcript.
-- Keep the language clear and instructional.
+- Favor clarity and practical guidance over brevity. When in doubt, expand explanations and add short examples.
+- Ensure deepDiveMarkdown sections include specific, actionable steps a learner can follow (commands, code snippets, expected outputs, configuration notes).
+- Use Mermaid diagrams for architecture or flow explanations when helpful.
+- Avoid conversational filler; write as an expert instructor.
 `;
 
       const text = await this.complete(prompt, 4096);

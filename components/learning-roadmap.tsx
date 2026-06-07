@@ -265,6 +265,42 @@ export function LearningRoadmapView({ roadmap }: { roadmap: LearningRoadmap }) {
                   <p className="mt-2 text-zinc-600 dark:text-zinc-300 leading-relaxed">{selectedNode.summary}</p>
                 </div>
 
+                {selectedNode.whyItMatters ? (
+                  <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
+                    <p className="text-sm font-semibold text-zinc-900 dark:text-white">Why this matters</p>
+                    <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-300">{selectedNode.whyItMatters}</p>
+                  </div>
+                ) : null}
+
+                {(selectedNode.prerequisites?.length || selectedNode.keyTakeaways?.length || selectedNode.commonMistakes?.length) ? (
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    {selectedNode.prerequisites?.length ? (
+                      <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-2">Prerequisites</p>
+                        <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc pl-4">
+                          {selectedNode.prerequisites.map((item) => <li key={item}>{item}</li>)}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {selectedNode.keyTakeaways?.length ? (
+                      <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-2">Key Takeaways</p>
+                        <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc pl-4">
+                          {selectedNode.keyTakeaways.map((item) => <li key={item}>{item}</li>)}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {selectedNode.commonMistakes?.length ? (
+                      <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
+                        <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-2">Common Mistakes</p>
+                        <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc pl-4">
+                          {selectedNode.commonMistakes.map((item) => <li key={item}>{item}</li>)}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <article className="prose prose-zinc dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-h1:text-3xl prose-h2:text-2xl prose-h3:text-xl prose-p:leading-7 prose-li:marker:text-primary">
                   <ReactMarkdown>{selectedNode.deepDiveMarkdown || roadmap.documentMarkdown}</ReactMarkdown>
                 </article>
