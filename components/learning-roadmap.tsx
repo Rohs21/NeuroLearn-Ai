@@ -194,20 +194,6 @@ export function LearningRoadmapView({ roadmap }: { roadmap: LearningRoadmap }) {
         </div>
       </div>
 
-      {roadmap.coverageTopics?.length ? (
-        <Card className="border-zinc-200 dark:border-white/10 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-2xl shadow-xl">
-          <CardContent className="p-6 space-y-3">
-            <h2 className="text-lg font-bold text-zinc-900 dark:text-white">Hot Topics Covered</h2>
-            <div className="flex flex-wrap gap-2">
-              {roadmap.coverageTopics.map((topic) => (
-                <span key={topic} className="rounded-full border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 px-3 py-1 text-sm text-zinc-700 dark:text-zinc-200">
-                  {topic}
-                </span>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
 
       <div className="grid gap-8 lg:grid-cols-[minmax(320px,0.65fr)_minmax(0,1.35fr)]">
         <div className="space-y-6">
