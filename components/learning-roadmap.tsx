@@ -44,97 +44,23 @@ function RoadmapBranch({ node, index, onSelect, selectedTitle }: { node: Roadmap
   return (
     <AccordionItem value={`${index}-${node.title}`} className="border-white/10">
       <AccordionTrigger className={`text-left gap-3 py-4 hover:no-underline ${isSelected ? 'bg-primary/5' : ''}`} onClick={() => onSelect(node)}>
-        <div className="flex items-start gap-3 text-left">
+        <div className="flex items-center gap-3 text-left">
           <div className="mt-1 h-7 w-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">
             {String(index + 1).padStart(2, '0')}
           </div>
-          <div>
-            <p className="font-semibold text-zinc-900 dark:text-white">{node.title}</p>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 font-normal mt-1">{node.summary}</p>
-          </div>
+          <p className="font-semibold text-zinc-900 dark:text-white">{node.title}</p>
         </div>
       </AccordionTrigger>
       <AccordionContent>
-        <div className="space-y-4 pl-10 pr-2">
-          {node.whyItMatters && (
-            <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-white/5 p-4 text-sm text-zinc-600 dark:text-zinc-300">
-              {node.whyItMatters}
-            </div>
-          )}
-
-          {(node.prerequisites?.length || node.keyTakeaways?.length || node.commonMistakes?.length) ? (
-            <div className="grid gap-3 sm:grid-cols-3">
-              {node.prerequisites?.length ? (
-                <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-2">Prerequisites</p>
-                  <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc pl-4">
-                    {node.prerequisites.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
-                </div>
-              ) : null}
-              {node.keyTakeaways?.length ? (
-                <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-2">Key Takeaways</p>
-                  <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc pl-4">
-                    {node.keyTakeaways.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
-                </div>
-              ) : null}
-              {node.commonMistakes?.length ? (
-                <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 p-4">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400 mb-2">Common Mistakes</p>
-                  <ul className="space-y-1 text-sm text-zinc-600 dark:text-zinc-300 list-disc pl-4">
-                    {node.commonMistakes.map((item) => <li key={item}>{item}</li>)}
-                  </ul>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          {node.deepDiveMarkdown && (
-            <article className="prose prose-zinc dark:prose-invert max-w-none prose-headings:scroll-mt-24 prose-p:leading-7 prose-li:marker:text-primary">
-              <ReactMarkdown>{node.deepDiveMarkdown}</ReactMarkdown>
-            </article>
-          )}
-
-          {node.codeExample && (
-            <div className="rounded-2xl border border-zinc-200 dark:border-white/10 bg-zinc-950 text-zinc-100 overflow-hidden">
-              <div className="px-4 py-2 border-b border-white/10 text-[10px] uppercase tracking-[0.2em] text-zinc-400">
-                Code Example
-              </div>
-              <pre className="p-4 text-xs sm:text-sm overflow-x-auto whitespace-pre-wrap leading-relaxed">
-                <code>{node.codeExample}</code>
-              </pre>
-            </div>
-          )}
-
-          {node.resources?.length ? (
-            <div className="grid gap-2">
-              {node.resources.map((resource) => (
-                <a
-                  key={resource.url}
-                  href={resource.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 px-4 py-3 text-sm transition-all hover:border-primary/40 hover:shadow-lg"
-                >
-                  <span className="font-medium text-zinc-700 dark:text-zinc-200">{resource.title}</span>
-                  <ExternalLink className="h-4 w-4 text-zinc-400 group-hover:text-primary" />
-                </a>
+        {hasChildren ? (
+          <div className="ml-3 border-l border-zinc-200 dark:border-white/10 pl-4 pr-2">
+            <Accordion type="single" collapsible className="w-full">
+              {node.children!.map((child, childIndex) => (
+                <RoadmapBranch key={child.title} node={child} index={childIndex} onSelect={onSelect} selectedTitle={selectedTitle} />
               ))}
-            </div>
-          ) : null}
-
-          {hasChildren ? (
-            <div className="ml-3 border-l border-zinc-200 dark:border-white/10 pl-4">
-              <Accordion type="single" collapsible className="w-full">
-                {node.children!.map((child, childIndex) => (
-                  <RoadmapBranch key={child.title} node={child} index={childIndex} onSelect={onSelect} selectedTitle={selectedTitle} />
-                ))}
-              </Accordion>
-            </div>
-          ) : null}
-        </div>
+            </Accordion>
+          </div>
+        ) : null}
       </AccordionContent>
     </AccordionItem>
   );
