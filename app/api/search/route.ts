@@ -169,9 +169,27 @@ export async function POST(request: NextRequest) {
       });
 
       await Promise.allSettled(videoPromises);
+
+      // If the user generated a document/roadmap, record it as a Playlist entry
+      // (prefixed "[Doc]") so the heatmap/streak API picks it up via Playlist.createdAt.
+      if (outputType === 'document') {
+        try {
+          await (prisma as any).playlist.create({
+            data: {
+              title: `[Doc] ${query}`,
+              description: `AI-generated learning document for ${query}`,
+              videos: [],
+              userId: session.user.id,
+            },
+          });
+        } catch (error) {
+          // Non-critical — don't fail the whole request if activity logging fails
+          console.error('Failed to log document activity:', error);
+        }
+      }
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       playlist: playlistData,
       document: roadmap,
       outputType,
