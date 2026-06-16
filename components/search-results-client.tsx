@@ -7,6 +7,10 @@ import { PlaylistGrid } from '@/components/playlist-grid';
 import { Navbar } from '@/components/navbar';
 import { Button } from '@/components/ui/button';
 
+// Module-level cache: lives as long as the browser tab is open.
+// Only populated on success — failed or empty results are NEVER stored here.
+const successCache = new Map<string, { playlist?: any; document?: any }>();
+
 export default function SearchResultsClient() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -16,6 +20,8 @@ export default function SearchResultsClient() {
   const difficulty = searchParams?.get('difficulty') || 'beginner';
   const outputType = (searchParams?.get('outputType') as 'playlist' | 'document') || 'playlist';
 
+  const cacheKey = `${query}||${language}||${difficulty}||${outputType}`;
+
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [playlist, setPlaylist] = useState<any>(null);
@@ -24,35 +30,81 @@ export default function SearchResultsClient() {
   useEffect(() => {
     if (!query) return;
 
+    // If we already have a successful result cached, restore it immediately — no fetch needed.
+    const cached = successCache.get(cacheKey);
+    if (cached) {
+      if (outputType === 'document' && cached.document) {
+        setDocumentRoadmap(cached.document);
+        return;
+      }
+      if (outputType === 'playlist' && cached.playlist) {
+        setPlaylist(cached.playlist);
+        return;
+      }
+    }
+
     const doSearch = async () => {
-      setIsLoading(true); setError(''); setPlaylist(null); setDocumentRoadmap(null);
+      setIsLoading(true);
+      setError('');
+      setPlaylist(null);
+      setDocumentRoadmap(null);
+
       try {
-        const res = await fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ query, language, difficulty, outputType }) });
+        const res = await fetch('/api/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ query, language, difficulty, outputType }),
+        });
+
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Search failed');
 
-        if (outputType === 'document' && data.document) {
-          setDocumentRoadmap(data.document);
-        } else if (data.playlist) {
+        if (outputType === 'document') {
+          if (data.document) {
+            setDocumentRoadmap(data.document);
+            // ✅ Only write to cache when we actually have content
+            successCache.set(cacheKey, { document: data.document });
+          } else {
+            setError('Document could not be generated. Please try again.');
+          }
+        } else if (outputType === 'playlist' && data.playlist) {
+          // ✅ Cache before redirecting so back-navigation restores it instantly
+          successCache.set(cacheKey, { playlist: data.playlist });
           try {
-            const saveRes = await fetch('/api/playlist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify({ title: `Learning Path: ${query}`, description: `AI-curated learning path for ${query} (${language}, ${difficulty})`, videos: data.playlist }) });
-            if (saveRes.ok) { const saved = await saveRes.json(); router.push(`/playlist/${saved.id}`); return; }
+            const saveRes = await fetch('/api/playlist', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({
+                title: `Learning Path: ${query}`,
+                description: `AI-curated learning path for ${query} (${language}, ${difficulty})`,
+                videos: data.playlist,
+              }),
+            });
+            if (saveRes.ok) {
+              const saved = await saveRes.json();
+              router.push(`/playlist/${saved.id}`);
+              return;
+            }
             setPlaylist(data.playlist);
-          } catch {
+          } catch (e) {
+            console.error('Failed to auto-save playlist', e);
             setPlaylist(data.playlist);
           }
         } else {
           setError(data.message || 'No results found.');
         }
       } catch (err: any) {
-        setError(err?.message || 'Failed to search.');
+        setError(err?.message || 'Failed to search. Please try again.');
+        // ❌ Nothing written to cache on failure — next search re-fetches cleanly
       } finally {
         setIsLoading(false);
       }
     };
 
     doSearch();
-  }, [query, language, difficulty, outputType, router]);
+  }, [query, language, difficulty, outputType, router, cacheKey]);
 
   return (
     <div className="min-h-screen relative z-10">
@@ -75,7 +127,7 @@ export default function SearchResultsClient() {
               <div className="absolute inset-0 bg-zinc-400/20 dark:bg-white/10 blur-2xl rounded-full animate-pulse" />
               <div className="absolute inset-0 border-[3px] border-zinc-200 dark:border-white/10 rounded-full" />
               <div className="absolute inset-0 border-[3px] border-zinc-900 dark:border-white rounded-full border-t-transparent animate-spin duration-1000" />
-              <svg className="h-8 w-8 text-zinc-900 dark:text-white animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              <svg className="h-8 w-8 text-zinc-900 dark:text-white animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2v4M12 18v4M4.9 4.9l2.8 2.8M16.3 16.3l2.8 2.8M2 12h4M18 12h4M4.9 19.1l2.8-2.8M16.3 7.7l2.8-2.8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </div>
             <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mb-3 text-center">
               Curating Your Learning Path
@@ -87,7 +139,7 @@ export default function SearchResultsClient() {
         </div>
       )}
 
-      {error && (
+      {error && !isLoading && (
         <div className="container mx-auto px-4 py-10 text-center">
           <h3 className="text-lg font-semibold mb-2">Search Error</h3>
           <p className="text-muted-foreground mb-4">{error}</p>
@@ -95,13 +147,13 @@ export default function SearchResultsClient() {
         </div>
       )}
 
-      {playlist && !isLoading && (
+      {playlist && !isLoading && outputType === 'playlist' && (
         <div className="container mx-auto px-4 py-10">
-          <PlaylistGrid playlist={playlist} onVideoPlay={(id: string) => router.push(`/watch?v=${id}`)} onBookmarkPlaylist={() => {}} />
+          <PlaylistGrid playlist={playlist} onVideoPlay={(id: string) => router.push(`/watch?v=${id}`)} onBookmarkPlaylist={() => { }} />
         </div>
       )}
 
-      {documentRoadmap && !isLoading && (
+      {documentRoadmap && !isLoading && outputType === 'document' && (
         <div className="container mx-auto px-4 py-10">
           <LearningRoadmapView roadmap={documentRoadmap} />
         </div>

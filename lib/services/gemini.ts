@@ -4,7 +4,7 @@ export class GeminiService {
   private genAI: GoogleGenerativeAI;
 
   constructor() {
-    this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    this.genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
   }
 
   async generateVideoSummary(title: string, description: string): Promise<string> {
@@ -172,6 +172,96 @@ export class GeminiService {
       console.error('Gemini Difficulty Categorization Error:', error);
       return 'beginner';
     }
+  }
+
+  async generateLearningRoadmap(input: {
+    topic: string;
+    language: string;
+    difficulty: string;
+    contextVideos: { title: string; description: string }[];
+    references: { title: string; url: string; note: string }[];
+    coverageTopics?: string[];
+    coverageInstructions?: string;
+  }) {
+    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+    const context = input.contextVideos
+      .slice(0, 8)
+      .map((v, i) => `${i + 1}. ${v.title}\n   ${v.description.slice(0, 160)}`)
+      .join('\n');
+
+    const refs = input.references
+      .map((r, i) => `${i + 1}. ${r.title} - ${r.url} (${r.note})`)
+      .join('\n');
+
+    const prompt = `You are a senior curriculum designer and technical educator.
+Create a deeply practical, instructor-quality learning document for the topic below.
+
+Topic: ${input.topic}
+Language: ${input.language}
+Difficulty: ${input.difficulty}
+
+Requirements:
+- documentMarkdown: polished study guide with executive summary and table of contents.
+- outline: 6-10 top-level branches, each with 2-4 nested children where helpful.
+- Every branch/child must have: summary, whyItMatters, prerequisites, keyTakeaways, commonMistakes, deepDiveMarkdown (200+ words), codeExample (if applicable), resources.
+- Include runnable code snippets and at least one mini-project per major branch.
+
+Video context:
+${context || 'No video context provided.'}
+
+Available references:
+${refs || 'No references provided.'}
+
+Coverage focus:
+${input.coverageInstructions || 'Cover the essential hot topics for this subject comprehensively.'}
+
+Return ONLY valid JSON — no text outside the JSON:
+{
+  "title": "...",
+  "summary": "...",
+  "level": "...",
+  "estimatedTime": "...",
+  "documentMarkdown": "# ...",
+  "outline": [
+    {
+      "title": "...",
+      "summary": "...",
+      "whyItMatters": "...",
+      "prerequisites": ["..."],
+      "keyTakeaways": ["..."],
+      "commonMistakes": ["..."],
+      "deepDiveMarkdown": "### ...",
+      "codeExample": "...",
+      "resources": [{ "title": "...", "url": "..." }],
+      "children": []
+    }
+  ],
+  "nextSteps": ["..."],
+  "references": [{ "title": "...", "url": "...", "note": "..." }],
+  "coverageTopics": ["..."]
+}`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+
+    // Strip possible markdown code fences
+    const cleaned = text.replace(/```json\n?/gi, '').replace(/```\n?/gi, '').trim();
+    const match = cleaned.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Gemini returned no roadmap JSON');
+
+    const parsed = JSON.parse(match[0]);
+    return {
+      title: parsed.title ?? `${input.topic} Learning Roadmap`,
+      summary: parsed.summary ?? `A structured roadmap for ${input.topic}.`,
+      level: parsed.level ?? input.difficulty,
+      estimatedTime: parsed.estimatedTime ?? '4-8 weeks',
+      documentMarkdown: parsed.documentMarkdown ?? `# ${input.topic}\n\nStudy roadmap unavailable.`,
+      outline: Array.isArray(parsed.outline) ? parsed.outline : [],
+      nextSteps: Array.isArray(parsed.nextSteps) ? parsed.nextSteps : [],
+      references: Array.isArray(parsed.references) ? parsed.references : input.references,
+      coverageTopics: Array.isArray(parsed.coverageTopics) ? parsed.coverageTopics : input.coverageTopics,
+    };
   }
 }
 

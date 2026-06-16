@@ -33,23 +33,48 @@ const KEYS = [
 export class GroqService {
   private async complete(prompt: string, maxTokens = 1024): Promise<string> {
     let lastError: any;
-    for (const apiKey of KEYS) {
-      try {
-        const groq = new Groq({ apiKey });
-        const completion = await groq.chat.completions.create({
-          model: MODEL,
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: maxTokens,
-        });
-        return completion.choices[0]?.message?.content || '';
-      } catch (err: any) {
-        lastError = err;
-        // Only fall through to next key on rate-limit / quota errors
-        const status = err?.status ?? err?.error?.status;
-        if (status === 429 || status === 402 || String(err?.message).includes('quota')) {
-          continue;
+    const maxRetries = 2;
+    const fallbackModel = 'llama-3.1-8b-instant';
+
+    apiKeyLoop: for (const apiKey of KEYS) {
+      // Try primary model first, then fallback model
+      for (const modelToUse of [MODEL, fallbackModel]) {
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          try {
+            const groq = new Groq({ apiKey });
+            const completion = await groq.chat.completions.create({
+              model: modelToUse,
+              messages: [{ role: 'user', content: prompt }],
+              max_tokens: maxTokens,
+            });
+            return completion.choices[0]?.message?.content || '';
+          } catch (err: any) {
+            lastError = err;
+            const status = err?.status ?? err?.error?.status;
+            
+            if (status === 429) {
+              // If it's a rate limit error and we have retries left, wait and try again
+              if (attempt < maxRetries) {
+                const delay = Math.pow(2, attempt + 1) * 1000;
+                console.log(`Groq rate limit hit for ${modelToUse}. Retrying in ${delay}ms... (Attempt ${attempt + 1}/${maxRetries})`);
+                await new Promise(resolve => setTimeout(resolve, delay));
+                continue;
+              }
+            }
+            
+            // If we hit a rate limit on the primary model, try the fallback model in the same key
+            if (status === 429 && modelToUse === MODEL) {
+              console.log(`Rate limit reached for ${MODEL}, falling back to ${fallbackModel}`);
+              break; // Break the attempt loop to try the next model
+            }
+
+            // Only fall through to next key on rate-limit / quota errors
+            if (status === 429 || status === 402 || String(err?.message).includes('quota')) {
+              continue apiKeyLoop; // Move to the next API key
+            }
+            throw err;
+          }
         }
-        throw err;
       }
     }
     throw lastError;
@@ -263,14 +288,26 @@ Guidelines:
         coverageTopics: Array.isArray(parsed.coverageTopics) ? parsed.coverageTopics : input.coverageTopics,
       };
     } catch (error) {
-      console.error('Groq generateLearningRoadmap error:', error);
+      console.error('Groq generateLearningRoadmap error — trying Gemini fallback:', error);
 
+      // ─── Gemini fallback ───────────────────────────────────────────
+      if (process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+        try {
+          console.log('Falling back to Gemini for roadmap generation...');
+          const gem = new GeminiService();
+          return await gem.generateLearningRoadmap(input);
+        } catch (gemErr) {
+          console.error('Gemini generateLearningRoadmap fallback also failed:', gemErr);
+        }
+      }
+
+      // ─── Static fallback (last resort) ────────────────────────────
       return {
         title: `${input.topic} Learning Roadmap`,
         summary: `A structured roadmap for ${input.topic}.`,
         level: input.difficulty,
         estimatedTime: '4-8 weeks',
-        documentMarkdown: `# ${input.topic} Learning Roadmap\n\nA detailed roadmap could not be generated right now.`,
+        documentMarkdown: `# ${input.topic} Learning Roadmap\n\nA detailed roadmap could not be generated right now. Please try again in a moment.`,
         outline: [],
         nextSteps: ['Review the reference links and retry the roadmap generation.'],
         references: input.references,
