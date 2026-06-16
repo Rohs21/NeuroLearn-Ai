@@ -74,7 +74,7 @@ function HeatmapCell({ count, date }: { count: number; date: string }) {
 
   return (
     <div
-      title={`${date}: ${count} video${count !== 1 ? 's' : ''}`}
+      title={`${date}: ${count} activit${count !== 1 ? 'ies' : 'y'}`}
       className={`h-4 w-4 rounded-sm ${intensity} transition-colors cursor-default hover:ring-1 hover:ring-primary/60`}
     />
   );
@@ -527,7 +527,7 @@ export default function Dashboard() {
                       </div>
                       Learning Activity
                     </CardTitle>
-                    <p className="text-xs text-muted-foreground">Videos completed per day</p>
+                    <p className="text-xs text-muted-foreground">Videos completed &amp; playlists generated per day</p>
                   </CardHeader>
                   <CardContent className="pt-0 pb-3">
                     {streakData.activity.length > 0 ? (

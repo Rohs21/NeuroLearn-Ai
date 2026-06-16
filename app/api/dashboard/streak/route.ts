@@ -20,10 +20,20 @@ export async function GET(req: NextRequest) {
       orderBy: { viewedAt: 'desc' },
     });
 
+    // Get all playlist creation dates (each playlist = 1 generated playlist/document)
+    const playlists = await prisma.playlist.findMany({
+      where: { userId: session.user.id },
+      select: { createdAt: true },
+    });
+
     // Deduplicate by calendar day (YYYY-MM-DD in UTC)
+    // Include both video-completion days AND playlist-generation days
     const daySet = new Set<string>();
     for (const h of history) {
       daySet.add(h.viewedAt.toISOString().slice(0, 10));
+    }
+    for (const p of playlists) {
+      daySet.add(p.createdAt.toISOString().slice(0, 10));
     }
     const days = Array.from(daySet).sort().reverse(); // most recent first
 
@@ -73,10 +83,14 @@ export async function GET(req: NextRequest) {
     }
     longestStreak = Math.max(longestStreak, currentStreak, sortedAsc.length > 0 ? 1 : 0);
 
-    // Activity grid: last 30 days with completion counts
+    // Activity grid: count both video completions AND playlist/document generations per day
     const activityMap = new Map<string, number>();
     for (const h of history) {
       const day = h.viewedAt.toISOString().slice(0, 10);
+      activityMap.set(day, (activityMap.get(day) ?? 0) + 1);
+    }
+    for (const p of playlists) {
+      const day = p.createdAt.toISOString().slice(0, 10);
       activityMap.set(day, (activityMap.get(day) ?? 0) + 1);
     }
 
