@@ -58,6 +58,7 @@ export function VideoPlayer({
   const [quizSubmitted, setQuizSubmitted] = useState(false);
   const [quizScore, setQuizScore] = useState<number | null>(null);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
+  const [aiError, setAiError] = useState(false);
   const [notes, setNotes] = useState('');
   const [notesSaved, setNotesSaved] = useState(false);
   const [completed, setCompleted] = useState(false);
@@ -67,6 +68,7 @@ export function VideoPlayer({
     setSummary('');
     setQuiz([]);
     setFlashcards([]);
+    setAiError(false);
     setFlippedCards(new Set());
     setSelectedAnswers({});
     setQuizSubmitted(false);
@@ -133,6 +135,7 @@ export function VideoPlayer({
 
   const loadAIContent = async () => {
     setIsLoadingAI(true);
+    setAiError(false);
     try {
       const response = await fetch('/api/video/summary', {
         method: 'POST',
@@ -145,9 +148,12 @@ export function VideoPlayer({
         setSummary(data.summary || 'Summary unavailable.');
         setQuiz(data.quiz || []);
         setFlashcards(data.flashcards || []);
+      } else {
+        setAiError(true);
       }
     } catch (error) {
       console.error('Failed to load AI content:', error);
+      setAiError(true);
     } finally {
       setIsLoadingAI(false);
     }
@@ -319,6 +325,20 @@ export function VideoPlayer({
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
                   Generating comprehensive summary...
                 </div>
+              ) : aiError ? (
+                <div className="flex flex-col items-center gap-4 py-6 text-center">
+                  <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+                    AI content couldn&apos;t be generated right now (service may be busy).
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-zinc-200 dark:border-white/10"
+                    onClick={() => { setAiError(false); loadAIContent(); }}
+                  >
+                    Try Again
+                  </Button>
+                </div>
               ) : (
                 <div className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-zinc-900 dark:prose-headings:text-white prose-p:text-zinc-600 dark:prose-p:text-zinc-400 prose-li:text-zinc-600 dark:prose-li:text-zinc-400 prose-strong:text-zinc-900 dark:prose-strong:text-zinc-200 prose-h2:text-lg prose-h2:mt-6 prose-h2:mb-3">
                   <ReactMarkdown>{summary}</ReactMarkdown>
@@ -345,6 +365,20 @@ export function VideoPlayer({
                 <div className="flex items-center gap-3 text-zinc-500 font-medium">
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
                   Generating flashcards...
+                </div>
+              ) : aiError ? (
+                <div className="flex flex-col items-center gap-4 py-6 text-center">
+                  <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+                    Flashcards couldn&apos;t be generated right now.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-zinc-200 dark:border-white/10"
+                    onClick={() => { setAiError(false); loadAIContent(); }}
+                  >
+                    Try Again
+                  </Button>
                 </div>
               ) : flashcards.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -404,6 +438,20 @@ export function VideoPlayer({
                 <div className="flex items-center gap-3 text-zinc-500 font-medium">
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-r-transparent" />
                   Generating quiz...
+                </div>
+              ) : aiError ? (
+                <div className="flex flex-col items-center gap-4 py-6 text-center">
+                  <p className="text-zinc-500 dark:text-zinc-400 font-medium">
+                    Quiz couldn&apos;t be generated right now.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="border-zinc-200 dark:border-white/10"
+                    onClick={() => { setAiError(false); loadAIContent(); }}
+                  >
+                    Try Again
+                  </Button>
                 </div>
               ) : quiz.length > 0 ? (
                 <div className="space-y-8">

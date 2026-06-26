@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { LearningRoadmapView } from '@/components/learning-roadmap';
 import { PlaylistGrid } from '@/components/playlist-grid';
@@ -27,18 +27,25 @@ export default function SearchResultsClient() {
   const [playlist, setPlaylist] = useState<any>(null);
   const [documentRoadmap, setDocumentRoadmap] = useState<any>(null);
 
+  // Tracks the last cacheKey we successfully fetched so we know when to trigger a fresh fetch
+  const lastFetchedKey = useRef<string | null>(null);
+  // Retry counter — incrementing it forces a re-fetch for the same query
+  const [retryCount, setRetryCount] = useState(0);
+
   useEffect(() => {
     if (!query) return;
 
-    // If we already have a successful result cached, restore it immediately — no fetch needed.
+    // If we already have a successful result cached AND this isn't a manual retry, restore it immediately.
     const cached = successCache.get(cacheKey);
-    if (cached) {
+    if (cached && lastFetchedKey.current === cacheKey) {
       if (outputType === 'document' && cached.document) {
         setDocumentRoadmap(cached.document);
+        setError('');
         return;
       }
       if (outputType === 'playlist' && cached.playlist) {
         setPlaylist(cached.playlist);
+        setError('');
         return;
       }
     }
@@ -46,8 +53,8 @@ export default function SearchResultsClient() {
     const doSearch = async () => {
       setIsLoading(true);
       setError('');
-      setPlaylist(null);
-      setDocumentRoadmap(null);
+      // ✅ Do NOT clear existing document/playlist here — preserve the last good data
+      // while the new fetch is in-flight so the user always sees something.
 
       try {
         const res = await fetch('/api/search', {
@@ -63,14 +70,17 @@ export default function SearchResultsClient() {
         if (outputType === 'document') {
           if (data.document) {
             setDocumentRoadmap(data.document);
+            setPlaylist(null);
             // ✅ Only write to cache when we actually have content
             successCache.set(cacheKey, { document: data.document });
+            lastFetchedKey.current = cacheKey;
           } else {
             setError('Document could not be generated. Please try again.');
           }
         } else if (outputType === 'playlist' && data.playlist) {
           // ✅ Cache before redirecting so back-navigation restores it instantly
           successCache.set(cacheKey, { playlist: data.playlist });
+          lastFetchedKey.current = cacheKey;
           try {
             const saveRes = await fetch('/api/playlist', {
               method: 'POST',
@@ -87,15 +97,19 @@ export default function SearchResultsClient() {
               router.push(`/playlist/${saved.id}`);
               return;
             }
+            setDocumentRoadmap(null);
             setPlaylist(data.playlist);
           } catch (e) {
             console.error('Failed to auto-save playlist', e);
+            setDocumentRoadmap(null);
             setPlaylist(data.playlist);
           }
         } else {
           setError(data.message || 'No results found.');
         }
       } catch (err: any) {
+        // ✅ On failure, keep whatever was already displayed — only set the error banner.
+        // Previous document/playlist stays visible beneath the error.
         setError(err?.message || 'Failed to search. Please try again.');
         // ❌ Nothing written to cache on failure — next search re-fetches cleanly
       } finally {
@@ -104,7 +118,12 @@ export default function SearchResultsClient() {
     };
 
     doSearch();
-  }, [query, language, difficulty, outputType, router, cacheKey]);
+  }, [query, language, difficulty, outputType, router, cacheKey, retryCount]);
+
+  const handleRetry = () => {
+    setError('');
+    setRetryCount(c => c + 1);
+  };
 
   return (
     <div className="min-h-screen relative z-10">
@@ -141,9 +160,12 @@ export default function SearchResultsClient() {
 
       {error && !isLoading && (
         <div className="container mx-auto px-4 py-10 text-center">
-          <h3 className="text-lg font-semibold mb-2">Search Error</h3>
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={() => router.back()}>Back</Button>
+          <h3 className="text-lg font-semibold mb-2">Something went wrong</h3>
+          <p className="text-muted-foreground mb-6">{error}</p>
+          <div className="flex justify-center gap-3">
+            <Button onClick={handleRetry}>Try Again</Button>
+            <Button variant="outline" onClick={() => router.back()}>Go Back</Button>
+          </div>
         </div>
       )}
 
