@@ -71,22 +71,49 @@ export async function POST(request: NextRequest) {
     const youtubeService = new YouTubeService();
     const groqService = new GroqService();
 
-    // Generate smart queries for better results
-    const smartQueries = await youtubeService.generateSmartQuery(query, language);
+    // ── Step 1: AI-decompose the topic into ordered curriculum modules ──
+    // This replaces the old hardcoded suffix approach and gives YouTube
+    // specific, meaningful queries per subtopic instead of "topic tutorial",
+    // "topic complete course", etc.
+    let curriculumTopics = await groqService.generateCurriculumTopics({
+      topic: query,
+      difficulty,
+      language,
+      maxTopics: 8,
+    });
 
-    // Search videos from multiple queries and combine results
-    const allVideos = [];
-    for (const smartQuery of smartQueries.slice(0, 3)) { // Limit to 3 queries to avoid rate limits
-      const videos = await youtubeService.searchVideos(smartQuery, 15);
-      allVideos.push(...videos);
+    console.log(`[Search] Curriculum topics for "${query}":`, curriculumTopics.map(t => t.searchQuery));
+
+    // ── Step 2: Search YouTube once per curriculum topic ──────────────
+    // Each topic gets its own targeted query → much higher chance of
+    // finding the right video for that specific concept.
+    const allVideos: any[] = [];
+    const seenIds = new Set<string>();
+
+    for (const topic of curriculumTopics) {
+      const videos = await youtubeService.searchVideos(topic.searchQuery, 5);
+      for (const video of videos) {
+        if (!seenIds.has(video.id)) {
+          seenIds.add(video.id);
+          // Tag each video with its curriculum order so we can sort by it later
+          allVideos.push({ ...video, _curriculumOrder: topic.order, _curriculumTopic: topic.topic });
+        }
+      }
     }
 
-    // Remove duplicates and limit results
-    const uniqueVideos = allVideos
-      .filter((video, index, self) =>
-        index === self.findIndex(v => v.id === video.id)
-      )
-      .slice(0, 25);
+    // Fallback: if AI curriculum gave too few results, fill up with a broad search
+    if (allVideos.length < 5) {
+      console.warn('[Search] Curriculum search returned too few results, running broad fallback search.');
+      const fallbackVideos = await youtubeService.searchVideos(`${query} tutorial`, 20);
+      for (const video of fallbackVideos) {
+        if (!seenIds.has(video.id)) {
+          seenIds.add(video.id);
+          allVideos.push({ ...video, _curriculumOrder: 99, _curriculumTopic: query });
+        }
+      }
+    }
+
+    const uniqueVideos = allVideos.slice(0, 25);
 
     if (uniqueVideos.length === 0) {
       return NextResponse.json({
@@ -95,7 +122,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Categorize all videos in a single batched LLM call
+    // ── Step 3: Categorize difficulty in a single batched LLM call ────
     const difficulties = await groqService.categorizeDifficultyBatch(
       uniqueVideos.map(v => ({ title: v.title, description: v.description }))
     );
@@ -107,13 +134,21 @@ export async function POST(request: NextRequest) {
       duration: youtubeService.formatDuration(video.duration),
     }));
 
-    // Sort videos by difficulty (beginner -> intermediate -> advanced)
+    // ── Step 4: Sort by curriculum order first, then difficulty within each topic ──
+    // This keeps the structured sequence the AI designed while still
+    // ordering beginner→intermediate within the same topic slot.
     const difficultyOrder = { beginner: 1, intermediate: 2, advanced: 3 };
     const sortedVideos = categorizedVideos.sort((a, b) => {
+      const aOrder = a._curriculumOrder ?? 99;
+      const bOrder = b._curriculumOrder ?? 99;
+      if (aOrder !== bOrder) return aOrder - bOrder;
       const aDiff = difficultyOrder[a.difficulty as keyof typeof difficultyOrder] || 1;
       const bDiff = difficultyOrder[b.difficulty as keyof typeof difficultyOrder] || 1;
       return aDiff - bDiff;
     });
+
+    // Re-assign sequential order numbers after sorting
+    sortedVideos.forEach((v, i) => { v.order = i + 1; });
 
     const references = buildReferenceLinks(query);
     const coveragePlan = getCoveragePlan(query);

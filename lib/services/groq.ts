@@ -85,7 +85,6 @@ export class GroqService {
     description: string,
     transcript?: string
   ): Promise<{ summary: string; quiz: any[]; flashcards: { front: string; back: string }[] }> {
-    // ─── 1. Try Groq (both keys via this.complete) ───────────────────
     try {
       // Prefer Grok if configured
       if (process.env.GROK_API_KEY) {
@@ -93,12 +92,19 @@ export class GroqService {
         return await grok.generateVideoContent(title, description, transcript);
       }
 
-      if (KEYS.length > 0) {
-        const content = transcript && transcript.length > 200
-          ? `Transcript:\n${transcript.slice(0, 3000)}`
-          : `Description:\n${description.slice(0, 800)}`;
+      // If no GROQ API keys are configured, fall back to Gemini (Google) if available.
+      if (KEYS.length === 0 && process.env.GEMINI_API_KEY) {
+        const gem = new GeminiService();
+        const summary = await gem.generateVideoSummary(title, description);
+        const quiz = await gem.generateQuiz(title, description);
+        return { summary, quiz, flashcards: [] };
+      }
 
-        const prompt = `You are an expert educator. A student just watched this video. Your job is to teach them the actual concepts from it — not describe the video, but explain the content itself as a knowledgeable instructor would.
+      const content = transcript && transcript.length > 200
+        ? `Transcript:\n${transcript.slice(0, 3000)}`
+        : `Description:\n${description.slice(0, 800)}`;
+
+      const prompt = `You are an expert educator. A student just watched this video. Your job is to teach them the actual concepts from it — not describe the video, but explain the content itself as a knowledgeable instructor would.
 
 Title: ${title}
 ${content}
@@ -129,39 +135,22 @@ For "flashcards": exactly 5 cards. Front = concept or question. Back = clear exp
 
 Return ONLY valid JSON, nothing else.`;
 
-        const text = await this.complete(prompt, 4096);
-        const match = text.match(/\{[\s\S]*\}/);
-        if (match) {
-          const parsed = JSON.parse(sanitizeJsonLiterals(match[0]));
-          return {
-            summary: parsed.summary ?? 'Summary unavailable.',
-            quiz: Array.isArray(parsed.quiz) ? parsed.quiz : [],
-            flashcards: Array.isArray(parsed.flashcards) ? parsed.flashcards : [],
-          };
-        }
+      const text = await this.complete(prompt, 4096);
+
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) {
+        const parsed = JSON.parse(sanitizeJsonLiterals(match[0]));
+        return {
+          summary: parsed.summary ?? 'Summary unavailable.',
+          quiz: Array.isArray(parsed.quiz) ? parsed.quiz : [],
+          flashcards: Array.isArray(parsed.flashcards) ? parsed.flashcards : [],
+        };
       }
+      return { summary: 'Summary unavailable.', quiz: [], flashcards: [] };
     } catch (error) {
-      console.warn('Groq generateVideoContent failed, trying Gemini fallback:', error);
+      console.error('Groq generateVideoContent error:', error);
+      return { summary: 'Summary unavailable.', quiz: [], flashcards: [] };
     }
-
-    // ─── 2. Gemini fallback (all Groq keys exhausted) ────────────────
-    const geminiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (geminiKey) {
-      try {
-        console.log('[AI Fallback] Using Gemini for generateVideoContent...');
-        const gem = new GeminiService();
-        const [summary, quiz] = await Promise.all([
-          gem.generateVideoSummary(title, description),
-          gem.generateQuiz(title, description),
-        ]);
-        return { summary, quiz, flashcards: [] };
-      } catch (gemErr) {
-        console.error('[AI Fallback] Gemini generateVideoContent also failed:', gemErr);
-      }
-    }
-
-    // ─── 3. Static fallback (last resort) ────────────────────────────
-    return { summary: 'Summary unavailable. Please watch the video for full content.', quiz: [], flashcards: [] };
   }
 
   // kept for backwards compat — delegates to combined call
@@ -328,50 +317,45 @@ Guidelines:
   }
 
   async enhanceJobKeywords(jobTitle: string, jobDescription: string) {
-    const prompt = `You are an AI career and learning assistant. Your task is to analyze a job description and provide a structured learning plan.
+    try {
+      const prompt = `You are an AI career and learning assistant. Your task is to analyze a job description and categorize the required skills by difficulty level.
 
-Analyze the following job title and description and return a JSON object with three properties:
-1. "title": A concise, curated job title (e.g., "Full Stack Developer").
-2. "summary": A brief, one-sentence summary of the core technical requirements for this role.
-3. "keywords": An array of the top 10 most critical technologies and concepts from the description.
+Analyze the following job title and description and return a JSON object with these properties:
+1. "jobTitle": A concise, curated job title (e.g., "Full Stack Developer").
+2. "beginner": An array of skills and concepts a beginner should learn first (foundational knowledge, basic tools, introductory concepts).
+3. "intermediate": An array of skills for someone with some experience (mainstream frameworks, standard practices, mid-level concepts).
+4. "advanced": An array of advanced/expert-level skills (specialized tools, architect-level concepts, cutting-edge technologies).
 
+Each array should contain 3-7 skills as simple strings. Categorize thoughtfully based on typical learning curves.
 Do not include any conversational text, explanations, or code formatting. The entire response must be a valid JSON object.
 
 Job Title: ${jobTitle}
 Job Description:
 ${jobDescription}`;
 
-    // ─── 1. Try Groq ──────────────────────────────────────────────────
-    try {
       const text = await this.complete(prompt, 1024);
-      const cleaned = text.replace(/```json|```/g, '').trim();
-      return JSON.parse(cleaned);
+      const cleaned = text.replace(/```json|```/gi, '').trim();
+      const parsed = JSON.parse(cleaned);
+      return {
+        jobTitle: parsed.jobTitle || jobTitle,
+        beginner: Array.isArray(parsed.beginner) ? parsed.beginner : [],
+        intermediate: Array.isArray(parsed.intermediate) ? parsed.intermediate : [],
+        advanced: Array.isArray(parsed.advanced) ? parsed.advanced : [],
+      };
     } catch (error) {
-      console.warn('Groq enhanceJobKeywords failed, trying Gemini fallback:', error);
+      console.error('Groq enhanceJobKeywords error:', error);
+      return {
+        jobTitle,
+        beginner: [],
+        intermediate: [],
+        advanced: [],
+      };
     }
-
-    // ─── 2. Gemini fallback ───────────────────────────────────────────
-    const geminiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (geminiKey) {
-      try {
-        console.log('[AI Fallback] Using Gemini for enhanceJobKeywords...');
-        const gem = new GeminiService();
-        return await gem.enhanceJobKeywords(jobTitle, jobDescription);
-      } catch (gemErr) {
-        console.error('[AI Fallback] Gemini enhanceJobKeywords also failed:', gemErr);
-      }
-    }
-
-    // ─── 3. Static fallback ───────────────────────────────────────────
-    return {
-      title: jobTitle,
-      summary: 'Failed to generate AI-enhanced data.',
-      keywords: [],
-    };
   }
 
   async categorizeDifficulty(title: string, description: string): Promise<string> {
-    const prompt = `Categorize the difficulty level of this educational content:
+    try {
+      const prompt = `Categorize the difficulty level of this educational content:
 
 Title: ${title}
 Description: ${description}
@@ -383,40 +367,26 @@ Guidelines:
 - intermediate: Some background knowledge needed, building on basics
 - advanced: Complex topics, assumes prior knowledge, specialized`;
 
-    // ─── 1. Try Groq ──────────────────────────────────────────────────
-    try {
       const difficulty = (await this.complete(prompt, 10)).toLowerCase().trim();
       if (['beginner', 'intermediate', 'advanced'].includes(difficulty)) {
         return difficulty;
       }
+      return 'beginner';
     } catch (error) {
-      console.warn('Groq categorizeDifficulty failed, trying Gemini fallback:', error);
+      console.error('Groq categorizeDifficulty error:', error);
+      return 'beginner';
     }
-
-    // ─── 2. Gemini fallback ───────────────────────────────────────────
-    const geminiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (geminiKey) {
-      try {
-        console.log('[AI Fallback] Using Gemini for categorizeDifficulty...');
-        const gem = new GeminiService();
-        return await gem.categorizeDifficulty(title, description);
-      } catch (gemErr) {
-        console.error('[AI Fallback] Gemini categorizeDifficulty also failed:', gemErr);
-      }
-    }
-
-    // ─── 3. Static fallback ───────────────────────────────────────────
-    return 'beginner';
   }
 
   async categorizeDifficultyBatch(
     videos: { title: string; description: string }[]
   ): Promise<string[]> {
-    const list = videos
-      .map((v, i) => `${i + 1}. Title: ${v.title}\n   Description: ${v.description.slice(0, 120)}`)
-      .join('\n');
+    try {
+      const list = videos
+        .map((v, i) => `${i + 1}. Title: ${v.title}\n   Description: ${v.description.slice(0, 120)}`)
+        .join('\n');
 
-    const prompt = `Categorize the difficulty level of each educational video below.
+      const prompt = `Categorize the difficulty level of each educational video below.
 Return ONLY a JSON array of strings in the same order, each value being one of: "beginner", "intermediate", or "advanced".
 No explanations, no extra text — just the JSON array.
 
@@ -428,8 +398,6 @@ Guidelines:
 Videos:
 ${list}`;
 
-    // ─── 1. Try Groq ──────────────────────────────────────────────────
-    try {
       const text = await this.complete(prompt, 256);
       const match = text.match(/\[[\s\S]*\]/);
       if (match) {
@@ -438,26 +406,11 @@ ${list}`;
           ['beginner', 'intermediate', 'advanced'].includes(d.toLowerCase()) ? d.toLowerCase() : 'beginner'
         );
       }
+      return videos.map(() => 'beginner');
     } catch (error) {
-      console.warn('Groq categorizeDifficultyBatch failed, trying Gemini fallback:', error);
+      console.error('Groq categorizeDifficultyBatch error:', error);
+      return videos.map(() => 'beginner');
     }
-
-    // ─── 2. Gemini fallback (per-video, sequential) ───────────────────
-    const geminiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (geminiKey) {
-      try {
-        console.log('[AI Fallback] Using Gemini for categorizeDifficultyBatch...');
-        const gem = new GeminiService();
-        return await Promise.all(
-          videos.map(v => gem.categorizeDifficulty(v.title, v.description))
-        );
-      } catch (gemErr) {
-        console.error('[AI Fallback] Gemini categorizeDifficultyBatch also failed:', gemErr);
-      }
-    }
-
-    // ─── 3. Static fallback ───────────────────────────────────────────
-    return videos.map(() => 'beginner');
   }
 
   async generateInterviewQuestions(
@@ -478,5 +431,98 @@ ${list}`;
     const text = await this.complete(prompt, 512);
     const cleaned = text.replace(/```json|```/gi, '').trim();
     return JSON.parse(cleaned);
+  }
+
+  /**
+   * Decomposes a learning topic into an ordered list of subtopics/modules
+   * that map to distinct YouTube search queries, forming a structured curriculum.
+   *
+   * Returns an array like:
+   * [
+   *   { order: 1, topic: "React fundamentals and JSX",      searchQuery: "React JSX components tutorial beginner" },
+   *   { order: 2, topic: "State management with useState",  searchQuery: "React useState hook tutorial" },
+   *   ...
+   * ]
+   */
+  async generateCurriculumTopics(input: {
+    topic: string;
+    difficulty: string;
+    language: string;
+    maxTopics?: number;
+  }): Promise<{ order: number; topic: string; searchQuery: string }[]> {
+    const max = input.maxTopics ?? 8;
+
+    const prompt = `You are a curriculum designer building a structured video learning path.
+
+A learner wants to study: "${input.topic}"
+Their level: ${input.difficulty}
+Preferred language: ${input.language}
+
+Your task:
+1. Break "${input.topic}" into ${max} distinct, ordered learning modules — from foundational to advanced.
+2. For each module, write a focused YouTube search query that will find a high-quality tutorial video specifically for that module.
+   - Keep each searchQuery under 60 characters.
+   - Use terms like "tutorial", "explained", "crash course", "guide" to target educational videos.
+   - Do NOT use "${input.topic}" alone as a query — always combine it with the specific subtopic.
+   - If language is not English, append the language name (e.g., "in hindi") to each searchQuery.
+
+Rules:
+- Modules must be in strict learning order (prerequisites first).
+- Each module must be a distinct concept — no overlapping.
+- Beginner = start from absolute zero. Intermediate = skip basics. Advanced = assume strong foundation.
+- Return ONLY a valid JSON array, no other text.
+
+Format:
+[
+  { "order": 1, "topic": "Module name", "searchQuery": "specific youtube search query" },
+  { "order": 2, "topic": "Module name", "searchQuery": "specific youtube search query" },
+  ...
+]`;
+
+    // ─── 1. Try Groq ──────────────────────────────────────────────────
+    try {
+      const text = await this.complete(prompt, 1024);
+      const match = text.match(/\[[\s\S]*\]/);
+      if (match) {
+        const parsed = JSON.parse(match[0]) as { order: number; topic: string; searchQuery: string }[];
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.slice(0, max);
+        }
+      }
+    } catch (error) {
+      console.warn('[generateCurriculumTopics] Groq failed, falling back to Gemini:', error);
+    }
+
+    // ─── 2. Gemini fallback ───────────────────────────────────────────
+    const geminiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+    if (geminiKey) {
+      try {
+        const { GoogleGenerativeAI } = await import('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(geminiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const match = text.match(/\[[\s\S]*\]/);
+        if (match) {
+          const parsed = JSON.parse(match[0]) as { order: number; topic: string; searchQuery: string }[];
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            return parsed.slice(0, max);
+          }
+        }
+      } catch (gemErr) {
+        console.warn('[generateCurriculumTopics] Gemini also failed:', gemErr);
+      }
+    }
+
+    // ─── 3. Static fallback — generic queries ────────────────────────
+    console.warn('[generateCurriculumTopics] Both AI providers failed, using static fallback.');
+    const langSuffix = input.language !== 'en' ? ` in ${input.language}` : '';
+    return [
+      { order: 1, topic: `${input.topic} introduction`,    searchQuery: `${input.topic} introduction tutorial${langSuffix}` },
+      { order: 2, topic: `${input.topic} fundamentals`,    searchQuery: `${input.topic} fundamentals crash course${langSuffix}` },
+      { order: 3, topic: `${input.topic} core concepts`,   searchQuery: `${input.topic} core concepts explained${langSuffix}` },
+      { order: 4, topic: `${input.topic} practical guide`, searchQuery: `${input.topic} practical guide${langSuffix}` },
+      { order: 5, topic: `${input.topic} advanced topics`, searchQuery: `${input.topic} advanced tutorial${langSuffix}` },
+    ];
   }
 }

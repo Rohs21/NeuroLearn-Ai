@@ -4,9 +4,7 @@ export class GeminiService {
   private genAI: GoogleGenerativeAI;
 
   constructor() {
-    const key = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY;
-    if (!key) throw new Error('No Gemini API key found. Set GEMINI_API_KEY in your environment.');
-    this.genAI = new GoogleGenerativeAI(key);
+    this.genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY!);
   }
 
   async generateVideoSummary(title: string, description: string): Promise<string> {
@@ -266,5 +264,4 @@ Return ONLY valid JSON — no text outside the JSON:
     };
   }
 }
-
 
